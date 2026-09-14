@@ -1,0 +1,1073 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f3a2e">
+<title>Assistência Técnica</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{
+  --bg:#f4f5f7; --card:#fff; --line:#e3e5ea; --line2:#cfd3db;
+  --tx:#161a20; --tx2:#5d646f; --tx3:#8b929d;
+  --ac:#1f3a2e; --ac-tx:#fff;
+  --ok-bg:#e7f4ea; --ok-tx:#1d5b30;
+  --wa-bg:#fdf0d9; --wa-tx:#7a5106;
+  --er-bg:#fbe9e9; --er-tx:#8f2020;
+  --in-bg:#e8eff8; --in-tx:#17436f;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#101317; --card:#181c22; --line:#272c34; --line2:#39404a;
+    --tx:#eceef2; --tx2:#a3abb7; --tx3:#767e8a;
+    --ac:#cfe3d6; --ac-tx:#0f1a14;
+    --ok-bg:#16301f; --ok-tx:#8fd6a4;
+    --wa-bg:#33270f; --wa-tx:#f0c476;
+    --er-bg:#331818; --er-tx:#f0a0a0;
+    --in-bg:#152538; --in-tx:#9dc4ee;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,h3{font-weight:600;margin:0}
+button{font:inherit;color:inherit}
+a{color:var(--in-tx)}
+.app{min-height:100vh;display:grid;grid-template-columns:1fr}
+aside{display:none}
+.col{min-width:0;padding-bottom:78px}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 14px 10px;display:flex;align-items:center;gap:10px}
+header .t{flex:1;min-width:0}
+header h1{font-size:17px;line-height:1.2}
+header p{margin:0;font-size:12px;color:var(--tx3)}
+main{padding:0 14px}
+.icobtn{background:none;border:0;padding:6px;border-radius:9px;color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:13px}
+.icobtn:active,.icobtn:hover{background:var(--line)}
+.icobtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.icobtn.sync svg{color:var(--ok-tx)}
+.icobtn.off svg{color:var(--tx3)}
+.icobtn.err svg{color:var(--er-tx)}
+.icobtn.busy svg{animation:gira 1s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+label{display:block;font-size:12px;color:var(--tx2);margin:0 0 5px}
+input,select,textarea{width:100%;font:inherit;background:var(--card);color:var(--tx);border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ac);outline-offset:-1px}
+textarea{min-height:80px;resize:vertical}
+input[type=checkbox],input[type=radio]{width:auto;margin:0 6px 0 0;accent-color:var(--ac)}
+.field{margin-bottom:12px}
+.err{color:var(--er-tx);font-size:12px;margin:5px 0 0}
+.btn{width:100%;background:var(--ac);color:var(--ac-tx);border:0;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer}
+.btn:active,.btn:hover{opacity:.88}
+.btn.sec{background:transparent;color:var(--tx);border:1px solid var(--line2);font-weight:400;padding:10px}
+.btn.sm{width:auto;padding:8px 14px;font-size:13px}
+.btn.er{background:var(--er-bg);color:var(--er-tx)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.rows{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--card)}
+.row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;cursor:pointer;color:inherit}
+.row:last-child{border-bottom:0}
+.row:hover{background:var(--bg)}
+.row[aria-current=true]{background:var(--in-bg)}
+.row .g{flex:1;min-width:0}
+.row b{display:block;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row small{display:block;font-size:11.5px;color:var(--tx3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .v{font-size:13px;white-space:nowrap;text-align:right}
+.mut{color:var(--tx3)}
+.tag{display:inline-block;font-size:11.5px;padding:3px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok-tx)}
+.tag.wa{background:var(--wa-bg);color:var(--wa-tx)}
+.tag.er{background:var(--er-bg);color:var(--er-tx)}
+.tag.in{background:var(--in-bg);color:var(--in-tx)}
+.tag.mut{background:var(--line);color:var(--tx2)}
+.note{border-radius:10px;padding:11px 12px;font-size:13px;display:flex;gap:9px;align-items:flex-start;margin-bottom:10px}
+.note b{display:block;font-weight:600}
+.note.ok{background:var(--ok-bg);color:var(--ok-tx)}
+.note.wa{background:var(--wa-bg);color:var(--wa-tx)}
+.note.er{background:var(--er-bg);color:var(--er-tx)}
+.note.in{background:var(--in-bg);color:var(--in-tx)}
+.chip{display:inline-block;font-size:12px;padding:6px 11px;border-radius:14px;border:1px solid var(--line2);color:var(--tx2);cursor:pointer;background:none;margin:0 6px 6px 0}
+.chip[aria-pressed=true]{background:var(--in-bg);color:var(--in-tx);border-color:transparent}
+.sec-t{font-size:12px;color:var(--tx2);margin:16px 0 7px;text-transform:uppercase;letter-spacing:.04em}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.kpi p{margin:0;font-size:11.5px;color:var(--tx2)}
+.kpi b{display:block;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi b span{font-size:13px;font-weight:400;color:var(--tx2)}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;background:var(--ac)}
+.hide{display:none!important}
+.dl{font-size:12px;color:var(--tx3);text-align:center;margin:14px 0 4px}
+.fotos{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.fotos img,.fotos .add{width:84px;height:84px;object-fit:cover;border-radius:9px;border:1px solid var(--line);cursor:pointer;background:var(--bg)}
+.fotos .add{display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--tx3)}
+.fotos img:not([src]){font-size:10px;color:var(--tx3);padding:6px;overflow:hidden}
+.vis{border-left:3px solid var(--line2);padding:8px 12px;margin:10px 0}
+.vis.feita{border-color:var(--ok-tx)}
+.vis.atras{border-color:var(--er-tx)}
+.vis h3{font-size:14px}
+.vis p{margin:4px 0;font-size:13.5px}
+.mats{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.mats td{padding:3px 6px 3px 0;border-bottom:1px solid var(--line)}
+.mats td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+dl.info{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0;font-size:13.5px}
+dl.info dt{color:var(--tx2)}
+dl.info dd{margin:0}
+/* calendário */
+.cal-h{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.cal-h h2{flex:1;font-size:16px}
+.cal-h h2::first-letter{text-transform:uppercase}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal .wd{font-size:11px;color:var(--tx3);text-align:center;padding:2px 0}
+.cal .d{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:48px;padding:4px;cursor:pointer;text-align:left;font-size:12px;overflow:hidden;display:flex;flex-direction:column;gap:2px;color:inherit}
+.cal .d.fora{opacity:.35}
+.cal .d.hoje{border-color:var(--ac);border-width:2px}
+.cal .d[aria-pressed=true]{background:var(--in-bg)}
+.cal .d .n{font-weight:600;font-size:12px}
+.cal .d .ev{display:none;font-size:11px;padding:1px 5px;border-radius:5px;background:var(--in-bg);color:var(--in-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal .d .ev.feita{background:var(--ok-bg);color:var(--ok-tx)}
+.cal .d .ev.atras{background:var(--er-bg);color:var(--er-tx)}
+.cal .d .pts{display:flex;gap:2px;flex-wrap:wrap;margin-top:auto}
+.cal .d .pts i{width:7px;height:7px;border-radius:50%;background:var(--in-tx);display:block}
+.cal .d .pts i.feita{background:var(--ok-tx)}
+.cal .d .pts i.atras{background:var(--er-tx)}
+/* duas colunas */
+.split{display:block}
+.split .pane{min-width:0}
+.split[data-show=detail] .pane.list{display:none}
+.split:not([data-show=detail]) .pane.detail{display:none}
+.voltar{margin-bottom:8px}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.bottom button{flex:1;background:none;border:0;padding:9px 0 11px;font-size:11px;color:var(--tx3);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.bottom button svg,aside button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+nav.bottom button[aria-current=page]{color:var(--tx);font-weight:600}
+dialog{border:0;border-radius:14px;padding:0;max-width:560px;width:calc(100% - 24px);background:var(--card);color:var(--tx);box-shadow:0 10px 40px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog form,dialog .dbody{padding:18px}
+dialog h2{font-size:17px;margin-bottom:14px}
+dialog .dacts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+dialog .dacts .btn{width:auto;padding:10px 18px}
+dialog .big{max-width:100%;max-height:75vh;display:block;margin:0 auto;border-radius:8px}
+@media (min-width:900px){
+  .app{grid-template-columns:220px 1fr}
+  aside{display:flex;flex-direction:column;gap:4px;padding:18px 12px;border-right:1px solid var(--line);background:var(--card);position:sticky;top:0;height:100vh}
+  aside .brand{padding:4px 10px 16px}
+  aside .brand h1{font-size:17px;line-height:1.2}
+  aside .brand p{margin:2px 0 0;font-size:12px;color:var(--tx3)}
+  aside button.tab{display:flex;align-items:center;gap:10px;background:none;border:0;padding:10px 12px;border-radius:10px;font-size:14px;color:var(--tx2);cursor:pointer;text-align:left}
+  aside button.tab:hover{background:var(--bg)}
+  aside button.tab[aria-current=page]{background:var(--in-bg);color:var(--in-tx);font-weight:600}
+  aside .btn{margin-top:auto}
+  nav.bottom{display:none}
+  .col{padding-bottom:30px}
+  header{padding:20px 28px 12px}
+  header h1{font-size:22px}
+  #btnNovo{display:none}
+  main{padding:0 28px 28px}
+  .split{display:grid;grid-template-columns:400px 1fr;gap:18px;align-items:start}
+  .split .pane.list,.split .pane.detail{display:block!important}
+  .split .pane.list{position:sticky;top:76px;max-height:calc(100vh - 90px);overflow:auto}
+  .voltar{display:none}
+  .cal .d{min-height:92px}
+  .cal .d .ev{display:block}
+  .cal .d .pts{display:none}
+  .agenda{display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start}
+  .kpi b{font-size:28px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand"><h1>Assistência<br>técnica</h1><p>pós-obra</p></div>
+  <button class="tab" data-tab="agenda"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Agenda</button>
+  <button class="tab" data-tab="chamados"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12h6M9 16h6"/></svg>Chamados</button>
+  <button class="tab" data-tab="imoveis"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10M10 20v-6h4v6"/></svg>Imóveis</button>
+  <button class="tab" data-tab="painel"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Painel</button>
+  <button class="tab" data-tab="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>Ajustes</button>
+  <button class="btn" data-act="novoChamado">+ Novo chamado</button>
+</aside>
+<div class="col">
+  <header>
+    <div class="t"><h1 id="hTit">Agenda</h1><p id="hSub"></p></div>
+    <button class="icobtn off" id="btnDrive" aria-label="Google Drive" title="Google Drive"><svg viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 0 0 .4-9A7 7 0 0 0 4.3 12.5 3.5 3.5 0 0 0 6 19z"/></svg></button>
+    <button class="icobtn" id="btnNovo" data-act="novoChamado" aria-label="Novo chamado"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  </header>
+  <main id="main"></main>
+</div>
+</div>
+<nav class="bottom">
+  <button data-tab="agenda"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>agenda</button>
+  <button data-tab="chamados"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2M9 12h6M9 16h6"/></svg>chamados</button>
+  <button data-tab="imoveis"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10M10 20v-6h4v6"/></svg>imóveis</button>
+  <button data-tab="painel"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>painel</button>
+  <button data-tab="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>ajustes</button>
+</nav>
+<dialog id="dlg"></dialog>
+<input type="file" id="fileImp" accept=".json" hidden>
+<input type="file" id="fileFoto" accept="image/*" multiple hidden>
+
+<script>
+"use strict";
+const KEY = "assist_v1";
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+const PADRAO = () => ({
+  config: {
+    garantias: [
+      { id: "pintura", nome: "Pintura, rejunte e vedação", anos: 1 },
+      { id: "esquadrias", nome: "Esquadrias, fechaduras, louças e metais", anos: 2 },
+      { id: "eletrica", nome: "Instalações elétricas", anos: 3 },
+      { id: "hidraulica", nome: "Instalações hidráulicas", anos: 3 },
+      { id: "imperm", nome: "Impermeabilização e infiltração", anos: 5 },
+      { id: "estrutura", nome: "Estrutura", anos: 5 },
+      { id: "outro", nome: "Outro", anos: 1 }
+    ],
+    pessoas: [{ id: "p1", nome: "Faz-tudo", padrao: true }],
+    driveClientId: "",
+    ultimoBackup: null
+  },
+  meta: { salvoEm: null },
+  imoveis: [], chamados: [], visitas: [], fotos: []
+});
+
+let S = carregar();
+function migrar(d) {
+  const p = PADRAO();
+  d.config = Object.assign(p.config, d.config || {});
+  d.meta = d.meta || { salvoEm: null };
+  for (const k of ["imoveis", "chamados", "visitas", "fotos"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  d.visitas.forEach(v => { v.materiais = v.materiais || []; });
+  return d;
+}
+function carregar() {
+  try { const raw = localStorage.getItem(KEY); return raw ? migrar(JSON.parse(raw)) : PADRAO(); }
+  catch (e) { return PADRAO(); }
+}
+function salvar() {
+  S.meta.salvoEm = new Date().toISOString();
+  localStorage.setItem(KEY, JSON.stringify(S));
+  agendarSync();
+}
+
+// --- utilidades ---------------------------------------------------------
+const num = v => { if (v == null) return NaN; const s = String(v).trim().replace(/\./g, "").replace(",", "."); return s === "" ? NaN : Number(s); };
+const finito = n => n !== null && n !== undefined && n !== "" && Number.isFinite(Number(n));
+const fmt = (n, d = 2) => (!finito(n) ? "—" : Number(n).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }));
+const money = n => (!finito(n) ? "—" : "R$ " + fmt(n, 2));
+const hoje = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const iso = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const dBR = s => (s ? s.slice(8, 10) + "/" + s.slice(5, 7) + "/" + s.slice(0, 4) : "—");
+const dias = (a, b) => Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 86400000);
+const addDias = (s, n) => { const d = new Date(s + "T12:00:00"); d.setDate(d.getDate() + n); return iso(d); };
+const addAnos = (s, n) => { const d = new Date(s + "T12:00:00"); d.setFullYear(d.getFullYear() + n); return iso(d); };
+const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const wa = t => { let d = String(t || "").replace(/\D/g, ""); if (d && d.length <= 11) d = "55" + d; return "https://wa.me/" + d; };
+const diaSemana = s => ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"][new Date(s + "T12:00:00").getDay()];
+
+const imovel = id => S.imoveis.find(x => x.id === id);
+const chamado = id => S.chamados.find(x => x.id === id);
+const visita = id => S.visitas.find(x => x.id === id);
+const tipoG = id => S.config.garantias.find(x => x.id === id);
+const pessoa = id => S.config.pessoas.find(x => x.id === id);
+const pessoaPadrao = () => S.config.pessoas.find(p => p.padrao) || S.config.pessoas[0];
+const visitasDe = cid => S.visitas.filter(v => v.chamadoId === cid).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+const fotosDe = ref => S.fotos.filter(f => f.ref === ref);
+const empreendimentos = () => [...new Set(S.imoveis.map(i => i.empreendimento).filter(Boolean))].sort();
+
+const STATUS = { aberto: ["Aberto", "in"], agendado: ["Agendado", "in"], andamento: ["Em andamento", "wa"], resolvido: ["Resolvido", "ok"], fora_garantia: ["Fora de garantia", "er"], nao_procede: ["Não procede", "mut"] };
+const VTIPO = { avaliacao: "Avaliação", execucao: "Execução", retorno: "Retorno" };
+const CANAL = { whatsapp: "WhatsApp", telefone: "Telefone", pessoal: "Pessoalmente", outro: "Outro" };
+
+// --- regras -------------------------------------------------------------
+// Status não é guardado: sai das visitas. Só o encerramento é explícito.
+function statusDe(c) {
+  if (c.encerrado) return c.encerrado.status;
+  const vs = visitasDe(c.id);
+  if (vs.some(v => !v.feita)) return "agendado";
+  if (vs.length) return "andamento";
+  return "aberto";
+}
+const tagStatus = c => { const s = STATUS[statusDe(c)]; return `<span class="tag ${s[1]}">${s[0]}</span>`; };
+function garantia(c) {
+  const im = imovel(c.imovelId), g = tipoG(c.tipoId);
+  if (!im || !im.entrega || !g) return null;
+  const ate = addAnos(im.entrega, g.anos);
+  return { ate, vencida: c.data > ate, dias: dias(c.data, ate) };
+}
+const tagGarantia = c => {
+  const g = garantia(c);
+  if (!g) return '<span class="tag mut">garantia: sem data de entrega</span>';
+  return g.vencida ? `<span class="tag er">garantia venceu em ${dBR(g.ate)}</span>${c.cortesia ? ' <span class="tag wa">cortesia</span>' : ""}`
+    : `<span class="tag ok">na garantia até ${dBR(g.ate)}</span>`;
+};
+const atrasada = v => !v.feita && v.data < hoje();
+const semVisita = c => !c.encerrado && !visitasDe(c.id).some(v => !v.feita);
+const abertos = () => S.chamados.filter(c => !c.encerrado);
+function tituloChamado(c) { const im = imovel(c.imovelId); return (im ? im.cliente : "?") + " — " + (tipoG(c.tipoId) || { nome: "?" }).nome; }
+
+// --- estado de tela -----------------------------------------------------
+let tela = "agenda", sel = null, selIm = null, mostrarDetalhe = false;
+let mesAgenda = hoje().slice(0, 7), diaSel = hoje();
+let filtro = { busca: "", status: "abertos", emp: "" }, buscaIm = "";
+const main = document.getElementById("main");
+
+function ir(t) { tela = t; mostrarDetalhe = false; render(); }
+function abrirChamado(id) { tela = "chamados"; sel = id; mostrarDetalhe = true; render(); }
+function abrirImovel(id) { tela = "imoveis"; selIm = id; mostrarDetalhe = true; render(); }
+
+function cabecalho() {
+  const tit = { agenda: "Agenda", chamados: "Chamados", imoveis: "Imóveis", painel: "Painel", ajustes: "Ajustes" }[tela];
+  const n = abertos().length, atr = S.visitas.filter(atrasada).length;
+  document.getElementById("hTit").textContent = tit;
+  document.getElementById("hSub").textContent = n + " chamado" + (n === 1 ? "" : "s") + " em aberto" + (atr ? " · " + atr + " visita" + (atr === 1 ? "" : "s") + " atrasada" + (atr === 1 ? "" : "s") : "");
+  document.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-current", b.dataset.tab === tela ? "page" : "false"));
+  const bd = document.getElementById("btnDrive");
+  bd.className = "icobtn " + DRIVE.estado;
+  bd.title = { off: "Conectar ao Google Drive", sync: "Sincronizado" + (DRIVE.quando ? " às " + DRIVE.quando : ""), busy: "Sincronizando…", err: "Erro: " + DRIVE.erro }[DRIVE.estado];
+}
+function render() {
+  cabecalho();
+  main.innerHTML = ({ agenda: vAgenda, chamados: vChamados, imoveis: vImoveis, painel: vPainel, ajustes: vAjustes }[tela])();
+  carregarFotos();
+}
+
+// --- agenda -------------------------------------------------------------
+function vAgenda() {
+  const [y, m] = mesAgenda.split("-").map(Number);
+  const nDias = new Date(y, m, 0).getDate();
+  const ini = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  const porDia = {};
+  S.visitas.forEach(v => (porDia[v.data] = porDia[v.data] || []).push(v));
+  const nomeMes = new Date(y, m - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  let cells = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"].map(d => `<div class="wd">${d}</div>`).join("");
+  // dias do mês anterior só pra alinhar a grade
+  const antes = new Date(y, m - 1, 0).getDate();
+  for (let i = ini - 1; i >= 0; i--) cells += `<div class="d fora"><span class="n">${antes - i}</span></div>`;
+  for (let d = 1; d <= nDias; d++) {
+    const s = mesAgenda + "-" + String(d).padStart(2, "0");
+    const vs = (porDia[s] || []).sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
+    const cls = v => v.feita ? "feita" : atrasada(v) ? "atras" : "";
+    cells += `<button class="d ${s === hoje() ? "hoje" : ""}" data-dia="${s}" aria-pressed="${s === diaSel}"><span class="n">${d}</span>
+      ${vs.slice(0, 3).map(v => `<span class="ev ${cls(v)}">${v.hora ? v.hora + " " : ""}${esc((imovel((chamado(v.chamadoId) || {}).imovelId) || {}).cliente || "?")}</span>`).join("")}
+      ${vs.length > 3 ? `<span class="ev">+${vs.length - 3}</span>` : ""}
+      <span class="pts">${vs.map(v => `<i class="${cls(v)}"></i>`).join("")}</span></button>`;
+  }
+  const resto = (7 - (ini + nDias) % 7) % 7;
+  for (let d = 1; d <= resto; d++) cells += `<div class="d fora"><span class="n">${d}</span></div>`;
+
+  const doDia = (porDia[diaSel] || []).sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
+  const atras = S.visitas.filter(atrasada).sort((a, b) => a.data.localeCompare(b.data));
+  const prox = S.visitas.filter(v => !v.feita && v.data >= hoje() && v.data <= addDias(hoje(), 7)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  const semV = abertos().filter(semVisita);
+  return `<div class="agenda"><div>
+    <div class="cal-h">
+      <button class="icobtn" data-mes="-1" aria-label="mês anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <h2>${nomeMes}</h2>
+      <button class="icobtn" data-mes="0">hoje</button>
+      <button class="icobtn" data-mes="1" aria-label="próximo mês"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="cal">${cells}</div>
+  </div><div>
+    <p class="sec-t">${diaSel === hoje() ? "hoje" : diaSemana(diaSel) + " " + dBR(diaSel)}</p>
+    ${doDia.length ? doDia.map(cardVisita).join("") : '<p class="mut" style="font-size:13px;margin:0 0 8px">Nenhuma visita nesse dia.</p>'}
+    <button class="btn sec" data-act="visitaNoDia" style="margin-bottom:8px">+ Marcar visita em ${dBR(diaSel)}</button>
+    ${atras.length ? '<p class="sec-t" style="color:var(--er-tx)">atrasadas</p>' + atras.map(cardVisita).join("") : ""}
+    ${prox.length ? '<p class="sec-t">próximos 7 dias</p>' + prox.map(cardVisita).join("") : ""}
+    ${semV.length ? '<p class="sec-t">chamados sem visita marcada</p><div class="rows">' + semV.map(rowChamado).join("") + "</div>" : ""}
+  </div></div>`;
+}
+function cardVisita(v) {
+  const c = chamado(v.chamadoId) || {}, im = imovel(c.imovelId) || {};
+  const at = atrasada(v);
+  return `<div class="card" style="padding:12px">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
+      <b>${v.hora || "sem hora"} · ${esc(im.cliente || "?")}</b>
+      <span class="tag ${v.feita ? "ok" : at ? "er" : "in"}">${v.feita ? "feita" : at ? "atrasada" : VTIPO[v.tipo] || v.tipo}</span>
+    </div>
+    <p style="margin:3px 0;font-size:13px;color:var(--tx2)">${diaSemana(v.data)} ${dBR(v.data)} · ${esc((tipoG(c.tipoId) || {}).nome || "")}${!v.feita ? " · " + esc((pessoa(v.pessoaId) || {}).nome || "") : ""}</p>
+    <p style="margin:3px 0;font-size:13px">${esc([im.endereco, im.empreendimento].filter(Boolean).join(" — "))}</p>
+    <div class="acts" style="margin-top:8px">
+      <button class="btn sec sm" data-act="abrirChamado" data-id="${c.id}">abrir chamado</button>
+      ${!v.feita ? `<button class="btn sm" data-act="concluir" data-id="${v.id}">concluir</button>` : ""}
+      ${im.telefone ? `<a class="btn sec sm" style="text-decoration:none;display:inline-block" href="${wa(im.telefone)}" target="_blank">WhatsApp</a>` : ""}
+      ${!v.feita ? `<button class="btn sec sm" data-act="ics" data-id="${v.id}">📅 calendário</button>` : ""}
+    </div></div>`;
+}
+
+// --- chamados -----------------------------------------------------------
+function rowChamado(c) {
+  const im = imovel(c.imovelId) || {}, g = garantia(c);
+  const prox = visitasDe(c.id).find(v => !v.feita);
+  return `<button class="row" data-act="selChamado" data-id="${c.id}" aria-current="${c.id === sel}">
+    <div class="g"><b>${esc(im.cliente || "?")} <span class="mut" style="font-weight:400">· ${esc(im.empreendimento || "")}</span></b>
+    <small>${esc((tipoG(c.tipoId) || {}).nome || "")} · aberto ${dBR(c.data)}${g && g.vencida ? " · ⚠ fora da garantia" : ""}</small></div>
+    <div class="v">${tagStatus(c)}${prox ? `<small class="mut" style="display:block;font-size:11px">visita ${dBR(prox.data)}</small>` : ""}</div>
+  </button>`;
+}
+function listaChamados() {
+  const q = norm(filtro.busca);
+  let l = S.chamados.filter(c => {
+    if (filtro.status === "abertos" && c.encerrado) return false;
+    if (filtro.status === "encerrados" && !c.encerrado) return false;
+    const im = imovel(c.imovelId) || {};
+    if (filtro.emp && im.empreendimento !== filtro.emp) return false;
+    if (q && !norm([im.cliente, im.endereco, im.empreendimento, c.descricao, (tipoG(c.tipoId) || {}).nome].join(" ")).includes(q)) return false;
+    return true;
+  }).sort((a, b) => b.data.localeCompare(a.data) || b.criadoEm.localeCompare(a.criadoEm));
+  return l.length ? `<div class="rows">${l.map(rowChamado).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum chamado.</p>';
+}
+function vChamados() {
+  const c = chamado(sel);
+  return `<div class="split" data-show="${mostrarDetalhe && c ? "detail" : "list"}">
+    <div class="pane list">
+      <div class="field"><input id="fBusca" placeholder="Buscar cliente, endereço, problema…" value="${esc(filtro.busca)}"></div>
+      <div style="margin-bottom:4px">
+        ${["abertos", "encerrados", "todos"].map(s => `<button class="chip" data-fst="${s}" aria-pressed="${filtro.status === s}">${s}</button>`).join("")}
+      </div>
+      ${empreendimentos().length ? `<div class="field"><select id="fEmp"><option value="">todos os empreendimentos</option>${empreendimentos().map(e => `<option ${filtro.emp === e ? "selected" : ""}>${esc(e)}</option>`).join("")}</select></div>` : ""}
+      <div id="lista">${listaChamados()}</div>
+    </div>
+    <div class="pane detail">${c ? detalheChamado(c) : '<p class="mut" style="font-size:13px;padding-top:20px;text-align:center">Selecione um chamado ao lado, ou crie um novo.</p>'}</div>
+  </div>`;
+}
+function detalheChamado(c) {
+  const im = imovel(c.imovelId) || {};
+  const vs = visitasDe(c.id);
+  const custo = vs.reduce((t, v) => t + v.materiais.reduce((s, m) => s + (finito(m.valor) ? Number(m.valor) : 0), 0), 0);
+  return `<button class="icobtn voltar" data-act="voltar">‹ chamados</button>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
+      <div><h2 style="font-size:18px"><button class="icobtn" style="padding:0;font-size:inherit;font-weight:600" data-act="abrirImovel" data-id="${c.imovelId}">${esc(im.cliente || "?")}</button></h2>
+      <p style="margin:2px 0;font-size:13px;color:var(--tx2)">${esc([im.endereco, im.empreendimento].filter(Boolean).join(" — "))}</p></div>
+      <div>${tagStatus(c)}</div>
+    </div>
+    <div style="margin:8px 0">${tagGarantia(c)}</div>
+    <dl class="info">
+      <dt>Problema</dt><dd><b>${esc((tipoG(c.tipoId) || {}).nome || "?")}</b></dd>
+      <dt>Contato</dt><dd>${dBR(c.data)} · ${CANAL[c.canal] || c.canal || "—"}</dd>
+      <dt>Descrição</dt><dd style="white-space:pre-wrap">${esc(c.descricao) || "—"}</dd>
+      ${c.encerrado ? `<dt>Encerrado</dt><dd>${STATUS[c.encerrado.status][0]} em ${dBR(c.encerrado.data)}${c.encerrado.obs ? " — " + esc(c.encerrado.obs) : ""}</dd>` : ""}
+      ${custo ? `<dt>Material</dt><dd>${money(custo)}</dd>` : ""}
+    </dl>
+    <div class="fotos">${fotosDe(c.id).map(f => `<img data-foto="${f.id}" alt="">`).join("")}<button class="add" data-act="addFoto" data-ref="${c.id}" aria-label="Adicionar foto">+</button></div>
+    <div class="acts">
+      ${im.telefone ? `<a class="btn sec sm" style="text-decoration:none;display:inline-block" href="${wa(im.telefone)}" target="_blank">WhatsApp</a>` : ""}
+      <button class="btn sec sm" data-act="editarChamado" data-id="${c.id}">editar</button>
+      ${c.encerrado ? `<button class="btn sec sm" data-act="reabrir" data-id="${c.id}">reabrir</button>` : `<button class="btn sec sm" data-act="encerrar" data-id="${c.id}">encerrar</button>`}
+      <button class="btn sec sm" style="color:var(--er-tx)" data-act="excluirChamado" data-id="${c.id}">excluir</button>
+    </div>
+  </div>
+  <p class="sec-t">visitas</p>
+  ${vs.length ? vs.map(blocoVisita).join("") : '<p class="mut" style="font-size:13px;margin:0 0 10px">Nenhuma visita ainda.</p>'}
+  ${!c.encerrado ? `<button class="btn" data-act="novaVisita" data-id="${c.id}">+ Agendar visita</button>` : ""}`;
+}
+function blocoVisita(v) {
+  const at = atrasada(v);
+  return `<div class="vis ${v.feita ? "feita" : at ? "atras" : ""}">
+    <h3>${diaSemana(v.data)} ${dBR(v.data)}${v.hora ? " às " + v.hora : ""} · ${VTIPO[v.tipo] || v.tipo} <span class="mut" style="font-weight:400">· ${esc((pessoa(v.pessoaId) || {}).nome || "")}</span>
+      ${v.feita ? `<span class="tag ${v.resolveu ? "ok" : "wa"}">${v.resolveu ? "resolveu" : "não resolveu"}</span>` : at ? '<span class="tag er">atrasada</span>' : '<span class="tag in">marcada</span>'}</h3>
+    ${v.obs ? `<p class="mut">${esc(v.obs)}</p>` : ""}
+    ${v.feita ? `<p style="white-space:pre-wrap">${esc(v.relato) || "<span class='mut'>sem relato</span>"}</p>` : ""}
+    ${v.materiais.length ? `<table class="mats">${v.materiais.map(m => `<tr><td>${esc(m.nome)}${m.qtd ? " × " + esc(m.qtd) : ""}</td><td>${money(m.valor)}</td></tr>`).join("")}</table>` : ""}
+    ${v.feita || fotosDe(v.id).length ? `<div class="fotos">${fotosDe(v.id).map(f => `<img data-foto="${f.id}" alt="">`).join("")}<button class="add" data-act="addFoto" data-ref="${v.id}" aria-label="Adicionar foto">+</button></div>` : ""}
+    <div class="acts" style="margin-top:6px">
+      ${!v.feita ? `<button class="btn sm" data-act="concluir" data-id="${v.id}">concluir visita</button><button class="btn sec sm" data-act="ics" data-id="${v.id}">📅 calendário</button>` : ""}
+      <button class="btn sec sm" data-act="editarVisita" data-id="${v.id}">editar</button>
+      <button class="btn sec sm" style="color:var(--er-tx)" data-act="excluirVisita" data-id="${v.id}">excluir</button>
+    </div></div>`;
+}
+
+// --- imóveis ------------------------------------------------------------
+function listaImoveis() {
+  const q = norm(buscaIm);
+  const l = S.imoveis.filter(i => !q || norm([i.cliente, i.endereco, i.empreendimento, i.telefone].join(" ")).includes(q))
+    .sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR"));
+  return l.length ? `<div class="rows">${l.map(i => {
+    const n = S.chamados.filter(c => c.imovelId === i.id && !c.encerrado).length;
+    return `<button class="row" data-act="selImovel" data-id="${i.id}" aria-current="${i.id === selIm}">
+      <div class="g"><b>${esc(i.cliente)}</b><small>${esc([i.endereco, i.empreendimento].filter(Boolean).join(" — "))}</small></div>
+      <div class="v">${n ? `<span class="tag in">${n} aberto${n > 1 ? "s" : ""}</span>` : ""}</div></button>`;
+  }).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum imóvel.</p>';
+}
+function vImoveis() {
+  const im = imovel(selIm);
+  return `<div class="split" data-show="${mostrarDetalhe && im ? "detail" : "list"}">
+    <div class="pane list">
+      <div class="field"><input id="fBuscaIm" placeholder="Buscar cliente, endereço…" value="${esc(buscaIm)}"></div>
+      <button class="btn sec" data-act="novoImovel" style="margin-bottom:10px">+ Novo imóvel</button>
+      <div id="listaIm">${listaImoveis()}</div>
+    </div>
+    <div class="pane detail">${im ? detalheImovel(im) : '<p class="mut" style="font-size:13px;padding-top:20px;text-align:center">Selecione um imóvel ao lado.</p>'}</div>
+  </div>`;
+}
+function detalheImovel(im) {
+  const cs = S.chamados.filter(c => c.imovelId === im.id).sort((a, b) => b.data.localeCompare(a.data));
+  const entregue = im.entrega ? dias(im.entrega, hoje()) : null;
+  return `<button class="icobtn voltar" data-act="voltar">‹ imóveis</button>
+  <div class="card">
+    <h2 style="font-size:18px">${esc(im.cliente)}</h2>
+    <dl class="info">
+      <dt>Telefone</dt><dd>${im.telefone ? `${esc(im.telefone)} · <a href="${wa(im.telefone)}" target="_blank">WhatsApp</a>` : "—"}</dd>
+      <dt>Endereço</dt><dd>${esc(im.endereco) || "—"}</dd>
+      <dt>Empreend.</dt><dd>${esc(im.empreendimento) || "—"}</dd>
+      <dt>Entrega</dt><dd>${im.entrega ? dBR(im.entrega) + ` <span class="mut">(há ${entregue} dias)</span>` : '<span class="tag wa">sem data — garantia não calcula</span>'}</dd>
+      ${im.obs ? `<dt>Obs.</dt><dd style="white-space:pre-wrap">${esc(im.obs)}</dd>` : ""}
+    </dl>
+    ${im.entrega ? `<p class="sec-t" style="margin-top:6px">garantias</p><div style="font-size:13px">${S.config.garantias.map(g => { const ate = addAnos(im.entrega, g.anos); const v = hoje() > ate; return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line)"><span>${esc(g.nome)}</span><span class="${v ? "mut" : ""}">${v ? "venceu " : "até "}${dBR(ate)}</span></div>`; }).join("")}</div>` : ""}
+    <div class="acts" style="margin-top:12px">
+      <button class="btn sm" data-act="novoChamadoIm" data-id="${im.id}">+ Chamado</button>
+      <button class="btn sec sm" data-act="editarImovel" data-id="${im.id}">editar</button>
+      <button class="btn sec sm" style="color:var(--er-tx)" data-act="excluirImovel" data-id="${im.id}">excluir</button>
+    </div>
+  </div>
+  <p class="sec-t">chamados (${cs.length})</p>
+  ${cs.length ? `<div class="rows">${cs.map(rowChamado).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum chamado.</p>'}`;
+}
+
+// --- painel -------------------------------------------------------------
+function vPainel() {
+  const ab = abertos(), atr = S.visitas.filter(atrasada).length;
+  const prox = S.visitas.filter(v => !v.feita && v.data >= hoje() && v.data <= addDias(hoje(), 7)).length;
+  const res = S.chamados.filter(c => c.encerrado && c.encerrado.status === "resolvido");
+  const medio = res.length ? res.reduce((t, c) => t + dias(c.data, c.encerrado.data), 0) / res.length : NaN;
+  const custo = S.visitas.reduce((t, v) => t + v.materiais.reduce((s, m) => s + (finito(m.valor) ? Number(m.valor) : 0), 0), 0);
+  // problemas por empreendimento × tipo — é aqui que vício construtivo aparece
+  const porEmp = {};
+  S.chamados.forEach(c => {
+    if (c.encerrado && c.encerrado.status === "nao_procede") return;
+    const e = (imovel(c.imovelId) || {}).empreendimento || "(sem empreendimento)";
+    const t = (tipoG(c.tipoId) || {}).nome || "?";
+    porEmp[e] = porEmp[e] || { n: 0, tipos: {}, ims: new Set() };
+    porEmp[e].n++; porEmp[e].ims.add(c.imovelId); porEmp[e].tipos[t] = (porEmp[e].tipos[t] || 0) + 1;
+  });
+  const emps = Object.entries(porEmp).sort((a, b) => b[1].n - a[1].n);
+  const max = Math.max(1, ...emps.flatMap(([, d]) => Object.values(d.tipos)));
+  return `<div class="kpis">
+    <div class="kpi"><p>chamados em aberto</p><b>${ab.length}</b></div>
+    <div class="kpi"><p>visitas próximos 7 dias</p><b>${prox}</b></div>
+    <div class="kpi"><p>visitas atrasadas</p><b style="${atr ? "color:var(--er-tx)" : ""}">${atr}</b></div>
+    <div class="kpi"><p>tempo médio p/ resolver</p><b>${finito(medio) ? Math.round(medio) : "—"} <span>dias</span></b></div>
+    <div class="kpi"><p>material lançado</p><b style="font-size:20px">${money(custo)}</b></div>
+    <div class="kpi"><p>resolvidos</p><b>${res.length} <span>de ${S.chamados.length}</span></b></div>
+  </div>
+  <p class="sec-t">problemas por empreendimento</p>
+  ${emps.length ? emps.map(([e, d]) => `<div class="card"><b>${esc(e)}</b> <span class="mut">· ${d.n} chamado${d.n > 1 ? "s" : ""} · ${d.ims.size} imóve${d.ims.size > 1 ? "is" : "l"}</span>
+    ${Object.entries(d.tipos).sort((a, b) => b[1] - a[1]).map(([t, n]) => `<div style="font-size:13px;margin-top:8px;display:flex;justify-content:space-between"><span>${esc(t)}</span><b>${n}</b></div><div class="bar"><i style="width:${n / max * 100}%"></i></div>`).join("")}
+  </div>`).join("") : '<p class="mut" style="font-size:13px">Sem chamados ainda.</p>'}`;
+}
+
+// --- ajustes ------------------------------------------------------------
+function vAjustes() {
+  const ub = S.config.ultimoBackup;
+  return `<p class="sec-t">prazos de garantia</p>
+  <div class="card">
+    ${S.config.garantias.map(g => `<div class="grid3" style="grid-template-columns:1fr 80px 36px;margin-bottom:8px;align-items:center">
+      <input data-g="${g.id}" data-campo="nome" value="${esc(g.nome)}">
+      <input data-g="${g.id}" data-campo="anos" inputmode="numeric" value="${g.anos}" aria-label="anos">
+      <button class="icobtn" data-act="rmGar" data-id="${g.id}" aria-label="remover">✕</button></div>`).join("")}
+    <p class="mut" style="font-size:12px;margin:0 0 10px">nome · anos de garantia contados da entrega das chaves</p>
+    <button class="btn sec sm" data-act="addGar">+ tipo de problema</button>
+  </div>
+  <p class="sec-t">quem faz as visitas</p>
+  <div class="card">
+    ${S.config.pessoas.map(p => `<div class="grid3" style="grid-template-columns:1fr auto 36px;margin-bottom:8px;align-items:center">
+      <input data-p="${p.id}" value="${esc(p.nome)}">
+      <label style="margin:0;display:flex;align-items:center;font-size:12px;white-space:nowrap"><input type="radio" name="padrao" value="${p.id}" ${p.padrao ? "checked" : ""}>padrão</label>
+      <button class="icobtn" data-act="rmPessoa" data-id="${p.id}" aria-label="remover">✕</button></div>`).join("")}
+    <button class="btn sec sm" data-act="addPessoa">+ pessoa</button>
+  </div>
+  <p class="sec-t">google drive</p>
+  <div class="card">
+    <div class="field"><label for="aCid">Client ID (do Google Cloud)</label><input id="aCid" value="${esc(S.config.driveClientId)}" placeholder="123456-abc.apps.googleusercontent.com" style="font-size:12px"></div>
+    <p class="mut" style="font-size:12px;margin:0 0 10px">O passo a passo pra criar o Client ID está no README do repositório. Os dados ficam num arquivo <code>assistencia.json</code> e as fotos numa pasta, dentro do seu Drive.</p>
+    <p style="font-size:13px;margin:0 0 10px">Estado: <b>${{ off: "desconectado", sync: "sincronizado" + (DRIVE.quando ? " às " + DRIVE.quando : ""), busy: "sincronizando…", err: "erro — " + DRIVE.erro }[DRIVE.estado]}</b></p>
+    <button class="btn" data-act="sync">${DRIVE.estado === "off" ? "Conectar e sincronizar" : "Sincronizar agora"}</button>
+  </div>
+  <button class="btn" data-act="salvarCfg">Salvar ajustes</button>
+  <p class="sec-t">backup</p>
+  <div class="card">
+    <p style="margin:0 0 12px;font-size:12px;color:${ub && dias(ub, hoje()) < 30 ? "var(--tx3)" : "var(--wa-tx)"}">${ub ? "último backup: " + dBR(ub) + " (há " + dias(ub, hoje()) + " dias)" : "você nunca exportou backup"} · as fotos não vão no arquivo (ficam no Drive)</p>
+    <button class="btn sec" data-act="exportar">Exportar backup</button>
+    <button class="btn sec" data-act="importar" style="margin-top:10px">Importar backup</button>
+  </div>
+  <p class="dl">${S.imoveis.length} imóveis · ${S.chamados.length} chamados · ${S.visitas.length} visitas · ${S.fotos.length} fotos</p>`;
+}
+function lerAjustes() {
+  document.querySelectorAll("[data-g]").forEach(el => {
+    const g = tipoG(el.dataset.g); if (!g) return;
+    if (el.dataset.campo === "nome") g.nome = el.value.trim() || g.nome;
+    else { const n = num(el.value); g.anos = isFinite(n) && n > 0 ? n : g.anos; }
+  });
+  document.querySelectorAll("[data-p]").forEach(el => { const p = pessoa(el.dataset.p); if (p) p.nome = el.value.trim() || p.nome; });
+  const r = document.querySelector("input[name=padrao]:checked");
+  if (r) S.config.pessoas.forEach(p => p.padrao = p.id === r.value);
+  const cid = document.getElementById("aCid");
+  if (cid) S.config.driveClientId = cid.value.trim();
+}
+
+// --- formulários (dialog nativo) ---------------------------------------
+const dlg = document.getElementById("dlg");
+let aoEnviar = null;
+function abrirForm(html, fn) {
+  aoEnviar = fn;
+  dlg.innerHTML = `<form method="dialog">${html}<div class="dacts"><button type="button" class="btn sec" data-act="fecharDlg">cancelar</button><button class="btn">Salvar</button></div></form>`;
+  dlg.showModal();
+  const f = dlg.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea");
+  if (f && matchMedia("(min-width:900px)").matches) f.focus();
+}
+dlg.addEventListener("submit", e => {
+  if (!aoEnviar) return;
+  const fd = new FormData(e.target);
+  const d = Object.fromEntries(fd.entries());
+  if (aoEnviar(d, fd, e.target) === false) e.preventDefault();
+});
+// o evento close chega atrasado; se outro formulário já reabriu o dialog, não limpa
+dlg.addEventListener("close", () => { if (!dlg.open) { aoEnviar = null; dlg.innerHTML = ""; } });
+
+const selectImoveis = (v, obrig = true) => `<select name="imovelId" ${obrig ? "required" : ""}><option value="">— escolha o imóvel —</option>${S.imoveis.slice().sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR")).map(i => `<option value="${i.id}" ${i.id === v ? "selected" : ""}>${esc(i.cliente)} — ${esc(i.endereco || i.empreendimento || "")}</option>`).join("")}</select>`;
+const selectTipos = v => `<select name="tipoId" required>${S.config.garantias.map(g => `<option value="${g.id}" ${g.id === v ? "selected" : ""}>${esc(g.nome)} (${g.anos} ano${g.anos > 1 ? "s" : ""})</option>`).join("")}</select>`;
+const selectPessoas = v => `<select name="pessoaId">${S.config.pessoas.map(p => `<option value="${p.id}" ${p.id === v ? "selected" : ""}>${esc(p.nome)}</option>`).join("")}</select>`;
+const datalistEmp = () => `<datalist id="dlEmp">${empreendimentos().map(e => `<option value="${esc(e)}">`).join("")}</datalist>`;
+
+function formImovel(im, depois) {
+  im = im || {};
+  abrirForm(`<h2>${im.id ? "Editar imóvel" : "Novo imóvel"}</h2>
+    <div class="field"><label>Cliente</label><input name="cliente" required value="${esc(im.cliente)}" placeholder="Nome do cliente"></div>
+    <div class="grid2 field">
+      <div><label>Telefone / WhatsApp</label><input name="telefone" inputmode="tel" value="${esc(im.telefone)}" placeholder="(11) 99999-9999"></div>
+      <div><label>Entrega das chaves</label><input name="entrega" type="date" value="${esc(im.entrega)}"></div>
+    </div>
+    <div class="field"><label>Empreendimento</label><input name="empreendimento" list="dlEmp" value="${esc(im.empreendimento)}" placeholder="Residencial …">${datalistEmp()}</div>
+    <div class="field"><label>Endereço / unidade</label><input name="endereco" value="${esc(im.endereco)}" placeholder="Rua, nº, casa 12"></div>
+    <div class="field"><label>Observações</label><textarea name="obs" style="min-height:56px">${esc(im.obs)}</textarea></div>`,
+  d => {
+    const novo = !im.id;
+    const o = novo ? { id: uid(), criadoEm: new Date().toISOString() } : im;
+    Object.assign(o, { cliente: d.cliente.trim(), telefone: d.telefone.trim(), entrega: d.entrega, empreendimento: d.empreendimento.trim(), endereco: d.endereco.trim(), obs: d.obs.trim() });
+    if (novo) S.imoveis.push(o);
+    salvar();
+    if (depois) setTimeout(() => depois(o)); else { selIm = o.id; render(); }
+  });
+}
+function formChamado(c, imovelId) {
+  c = c || {};
+  const novo = !c.id;
+  abrirForm(`<h2>${novo ? "Novo chamado" : "Editar chamado"}</h2>
+    <div class="field"><label>Imóvel</label>${selectImoveis(c.imovelId || imovelId)}
+      ${novo ? '<button type="button" class="icobtn" data-act="imovelNoForm" style="margin-top:4px">+ cadastrar imóvel novo</button>' : ""}</div>
+    <div class="grid2 field">
+      <div><label>Data do contato</label><input name="data" type="date" required value="${c.data || hoje()}"></div>
+      <div><label>Por onde chegou</label><select name="canal">${Object.entries(CANAL).map(([k, v]) => `<option value="${k}" ${(c.canal || "whatsapp") === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
+    </div>
+    <div class="field"><label>Tipo de problema</label>${selectTipos(c.tipoId)}<p id="gInfo" class="mut" style="font-size:12px;margin:5px 0 0"></p></div>
+    <div class="field"><label>Descrição</label><textarea name="descricao" placeholder="O que o cliente relatou">${esc(c.descricao)}</textarea></div>
+    <div class="field" id="fCortesia" style="display:none"><label style="display:flex;align-items:center;font-size:14px;color:var(--tx)"><input type="checkbox" name="cortesia" ${c.cortesia ? "checked" : ""}>Atender mesmo fora da garantia (cortesia)</label></div>
+    ${novo ? '<div class="field"><label>Fotos do problema</label><input type="file" name="fotos" accept="image/*" multiple></div>' : ""}`,
+  (d, fd) => {
+    const o = novo ? { id: uid(), criadoEm: new Date().toISOString(), encerrado: null } : c;
+    Object.assign(o, { imovelId: d.imovelId, data: d.data, canal: d.canal, tipoId: d.tipoId, descricao: d.descricao.trim(), cortesia: !!d.cortesia });
+    if (novo) S.chamados.push(o);
+    salvar();
+    const fotos = fd.getAll("fotos").filter(f => f && f.size);
+    if (fotos.length) guardarFotos(fotos, o.id).then(() => { if (tela === "chamados" || tela === "imoveis") render(); });
+    abrirChamado(o.id);
+  });
+  infoGarantiaForm();
+}
+// no formulário, mostra na hora se o problema ainda está na garantia
+function infoGarantiaForm() {
+  const f = dlg.querySelector("form"); if (!f || !f.imovelId) return;
+  const c = { imovelId: f.imovelId.value, tipoId: f.tipoId.value, data: f.data.value || hoje() };
+  const g = garantia(c), p = document.getElementById("gInfo"), fc = document.getElementById("fCortesia");
+  if (!f.imovelId.value) { p.textContent = ""; fc.style.display = "none"; return; }
+  if (!g) { p.textContent = "Imóvel sem data de entrega — não dá pra calcular a garantia."; p.style.color = "var(--wa-tx)"; fc.style.display = "none"; return; }
+  p.textContent = g.vencida ? "⚠ Garantia desse item venceu em " + dBR(g.ate) : "Na garantia até " + dBR(g.ate) + " (faltam " + g.dias + " dias)";
+  p.style.color = g.vencida ? "var(--er-tx)" : "var(--ok-tx)";
+  fc.style.display = g.vencida ? "block" : "none";
+}
+function formVisita(v, chamadoId, dataIni) {
+  v = v || {};
+  const novo = !v.id;
+  abrirForm(`<h2>${novo ? "Agendar visita" : "Editar visita"}</h2>
+    ${novo && !chamadoId ? `<div class="field"><label>Chamado</label><select name="chamadoId" required><option value="">— escolha —</option>${abertos().map(c => `<option value="${c.id}">${esc(tituloChamado(c))}</option>`).join("")}</select></div>` : ""}
+    <div class="grid2 field">
+      <div><label>Data</label><input name="data" type="date" required value="${v.data || dataIni || hoje()}"></div>
+      <div><label>Hora</label><input name="hora" type="time" value="${esc(v.hora)}"></div>
+    </div>
+    <div class="grid2 field">
+      <div><label>Tipo</label><select name="tipo">${Object.entries(VTIPO).map(([k, n]) => `<option value="${k}" ${(v.tipo || (visitasDe(chamadoId).length ? "retorno" : "avaliacao")) === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+      <div><label>Quem vai</label>${selectPessoas(v.pessoaId || pessoaPadrao().id)}</div>
+    </div>
+    <div class="field"><label>Observação</label><input name="obs" value="${esc(v.obs)}" placeholder="levar escada, cliente só à tarde…"></div>`,
+  d => {
+    const o = novo ? { id: uid(), chamadoId: chamadoId || d.chamadoId, feita: false, relato: "", resolveu: null, materiais: [] } : v;
+    Object.assign(o, { data: d.data, hora: d.hora, tipo: d.tipo, pessoaId: d.pessoaId, obs: d.obs.trim() });
+    if (novo) S.visitas.push(o);
+    salvar();
+    if (tela === "agenda") { diaSel = o.data; mesAgenda = o.data.slice(0, 7); }
+    render();
+  });
+}
+const linhaMat = (m = {}) => `<div class="grid3 mat" style="margin-bottom:6px"><input name="mNome" placeholder="material" value="${esc(m.nome)}"><input name="mQtd" placeholder="qtd" value="${esc(m.qtd)}"><input name="mValor" placeholder="R$" inputmode="decimal" value="${finito(m.valor) ? fmt(m.valor) : ""}"></div>`;
+function formConcluir(v) {
+  abrirForm(`<h2>Concluir visita</h2>
+    <p class="mut" style="font-size:13px;margin:-8px 0 12px">${dBR(v.data)} · ${esc(tituloChamado(chamado(v.chamadoId)))}</p>
+    <div class="field"><label>O que foi feito</label><textarea name="relato" required>${esc(v.relato)}</textarea></div>
+    <div class="field"><label>Resolveu o problema?</label>
+      <label style="display:inline-flex;align-items:center;margin-right:16px;font-size:15px;color:var(--tx)"><input type="radio" name="resolveu" value="1" required ${v.resolveu === true ? "checked" : ""}>Sim, resolvido</label>
+      <label style="display:inline-flex;align-items:center;font-size:15px;color:var(--tx)"><input type="radio" name="resolveu" value="0" ${v.resolveu === false ? "checked" : ""}>Não, precisa voltar</label></div>
+    <div class="field" id="fProx" style="display:none"><label>Já marcar o retorno? (opcional)</label>
+      <div class="grid2"><input name="proxData" type="date"><input name="proxHora" type="time"></div></div>
+    <div class="field"><label>Material usado (opcional)</label><div id="mats">${(v.materiais.length ? v.materiais : [{}]).map(linhaMat).join("")}</div>
+      <button type="button" class="icobtn" data-act="addMat">+ material</button></div>
+    <div class="field"><label>Fotos do serviço</label><input type="file" name="fotos" accept="image/*" multiple></div>`,
+  (d, fd) => {
+    const nomes = fd.getAll("mNome"), qtds = fd.getAll("mQtd"), vals = fd.getAll("mValor");
+    v.materiais = nomes.map((n, i) => ({ nome: n.trim(), qtd: qtds[i].trim(), valor: finito(num(vals[i])) ? num(vals[i]) : null })).filter(m => m.nome);
+    v.feita = true; v.relato = d.relato.trim(); v.resolveu = d.resolveu === "1";
+    const c = chamado(v.chamadoId);
+    if (v.resolveu && c && !c.encerrado) c.encerrado = { status: "resolvido", data: v.data, obs: "" };
+    if (!v.resolveu && d.proxData) S.visitas.push({ id: uid(), chamadoId: v.chamadoId, data: d.proxData, hora: d.proxHora, tipo: "retorno", pessoaId: v.pessoaId, obs: "", feita: false, relato: "", resolveu: null, materiais: [] });
+    salvar();
+    const fotos = fd.getAll("fotos").filter(f => f && f.size);
+    if (fotos.length) guardarFotos(fotos, v.id).then(render);
+    render();
+  });
+}
+function formEncerrar(c) {
+  abrirForm(`<h2>Encerrar chamado</h2>
+    <div class="field"><label>Motivo</label><select name="status">
+      <option value="resolvido">Resolvido</option><option value="fora_garantia">Fora de garantia — não atendido</option><option value="nao_procede">Não procede</option></select></div>
+    <div class="field"><label>Data</label><input name="data" type="date" required value="${hoje()}"></div>
+    <div class="field"><label>Observação</label><input name="obs" placeholder="opcional"></div>`,
+  d => { c.encerrado = { status: d.status, data: d.data, obs: d.obs.trim() }; salvar(); render(); });
+}
+function verFoto(id) {
+  const f = S.fotos.find(x => x.id === id);
+  dlg.innerHTML = `<div class="dbody"><img class="big" src="${urlFoto[id] || ""}" alt="">
+    <div class="dacts"><button class="btn er" data-act="rmFoto" data-id="${id}" style="width:auto;padding:10px 18px">Excluir foto</button><button class="btn sec" data-act="fecharDlg" style="width:auto;padding:10px 18px">fechar</button></div>
+    <p class="dl" style="margin:8px 0 0">${f ? dBR(f.criadoEm.slice(0, 10)) : ""}</p></div>`;
+  dlg.showModal();
+}
+
+// --- fotos: reduzidas, guardadas no IndexedDB (localStorage trava em 5 MB) --
+const idb = {
+  db: null,
+  abrir() { return new Promise((res, rej) => { const r = indexedDB.open("assist", 1); r.onupgradeneeded = () => r.result.createObjectStore("fotos"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
+  async op(modo, fn) { const db = this.db || (this.db = await this.abrir()); return new Promise((res, rej) => { const rq = fn(db.transaction("fotos", modo).objectStore("fotos")); rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error); }); },
+  get(id) { return this.op("readonly", s => s.get(id)); },
+  put(id, b) { return this.op("readwrite", s => s.put(b, id)); },
+  del(id) { return this.op("readwrite", s => s.delete(id)); }
+};
+function comprimir(file) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1200 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => { URL.revokeObjectURL(img.src); res(b); }, "image/jpeg", 0.8);
+    };
+    img.onerror = () => res(null);
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function guardarFotos(files, ref) {
+  for (const f of files) {
+    const b = await comprimir(f); if (!b) continue;
+    const id = uid();
+    await idb.put(id, b);
+    S.fotos.push({ id, ref, criadoEm: new Date().toISOString(), driveId: null });
+  }
+  salvar();
+}
+const urlFoto = {};
+async function carregarFotos() {
+  for (const img of document.querySelectorAll("img[data-foto]:not([src])")) {
+    const id = img.dataset.foto;
+    if (!urlFoto[id]) {
+      let b = await idb.get(id).catch(() => null);
+      if (!b) {
+        const f = S.fotos.find(x => x.id === id);
+        if (f && f.driveId && tokenValido()) {
+          try { b = await (await dapi("files/" + f.driveId + "?alt=media")).blob(); await idb.put(id, b); } catch (e) { }
+        }
+      }
+      if (b) urlFoto[id] = URL.createObjectURL(b);
+    }
+    if (urlFoto[id]) img.src = urlFoto[id];
+    else img.alt = tokenValido() ? "foto não encontrada" : "foto na nuvem — conecte o Drive";
+  }
+}
+async function excluirFoto(id) {
+  const f = S.fotos.find(x => x.id === id);
+  S.fotos = S.fotos.filter(x => x.id !== id);
+  await idb.del(id).catch(() => { });
+  delete urlFoto[id];
+  salvar();
+  if (f && f.driveId && tokenValido()) dapi("files/" + f.driveId, { method: "DELETE" }).catch(() => { });
+}
+
+// --- google drive -------------------------------------------------------
+// ponytail: última versão ganha, sem mesclagem por registro. Usuário único;
+// se um dia editar nos dois aparelhos sem sincronizar no meio, perde a mais
+// antiga. Mitigação: sincroniza ao abrir e 3 s depois de cada alteração.
+const DRIVE = { estado: "off", erro: "", quando: null, timer: null };
+const SCOPE = "https://www.googleapis.com/auth/drive.file";
+function tokenValido() {
+  try { const t = JSON.parse(sessionStorage.getItem("assist_tok") || "null"); return t && t.exp > Date.now() + 60000 ? t.tok : null; } catch (e) { return null; }
+}
+function conectar() {
+  return new Promise((res, rej) => {
+    if (!S.config.driveClientId) return rej(new Error("informe o Client ID nos ajustes"));
+    if (!window.google || !google.accounts) return rej(new Error("biblioteca do Google não carregou (sem internet?)"));
+    google.accounts.oauth2.initTokenClient({
+      client_id: S.config.driveClientId, scope: SCOPE,
+      callback: r => {
+        if (r.error) return rej(new Error(r.error));
+        sessionStorage.setItem("assist_tok", JSON.stringify({ tok: r.access_token, exp: Date.now() + r.expires_in * 1000 }));
+        res(r.access_token);
+      },
+      error_callback: e => rej(new Error(e.type === "popup_closed" ? "janela fechada" : e.type || "erro"))
+    }).requestAccessToken({ prompt: "" });
+  });
+}
+async function dapi(path, opts = {}, upload = false) {
+  const tok = tokenValido(); if (!tok) throw new Error("não conectado");
+  const r = await fetch((upload ? "https://www.googleapis.com/upload/drive/v3/" : "https://www.googleapis.com/drive/v3/") + path,
+    Object.assign({}, opts, { headers: Object.assign({ Authorization: "Bearer " + tok }, opts.headers || {}) }));
+  if (r.status === 401) { sessionStorage.removeItem("assist_tok"); throw new Error("sessão expirou, conecte de novo"); }
+  if (!r.ok) throw new Error("Drive respondeu " + r.status);
+  return r;
+}
+const dBuscar = async (nome, pasta) => {
+  const q = `name='${nome}' and trashed=false` + (pasta ? ` and '${pasta}' in parents` : "");
+  return (await (await dapi("files?q=" + encodeURIComponent(q) + "&fields=files(id,modifiedTime)")).json()).files[0] || null;
+};
+async function dCriar(nome, blob, pasta, mime) {
+  const meta = { name: nome, parents: pasta ? [pasta] : [] };
+  if (!blob) meta.mimeType = "application/vnd.google-apps.folder";
+  const fd = new FormData();
+  fd.append("metadata", new Blob([JSON.stringify(meta)], { type: "application/json" }));
+  if (blob) fd.append("file", new Blob([blob], { type: mime }));
+  const r = await dapi(blob ? "files?uploadType=multipart&fields=id" : "files?fields=id", { method: "POST", body: blob ? fd : JSON.stringify(meta), headers: blob ? {} : { "Content-Type": "application/json" } }, !!blob);
+  return (await r.json()).id;
+}
+const dAtualizar = (id, blob, mime) => dapi("files/" + id + "?uploadType=media", { method: "PATCH", body: blob, headers: { "Content-Type": mime } }, true);
+async function pastaDrive() {
+  const p = await dBuscar("Assistência Técnica");
+  return p ? p.id : dCriar("Assistência Técnica", null);
+}
+async function sincronizar(interativo) {
+  if (DRIVE.estado === "busy") return;
+  let mudou = false;
+  try {
+    if (!tokenValido()) { if (!interativo) return; await conectar(); }
+    DRIVE.estado = "busy"; cabecalho();
+    const pasta = await pastaDrive();
+    const arq = await dBuscar("assistencia.json", pasta);
+    let subir = !arq;
+    if (arq) {
+      const remoto = migrar(JSON.parse(await (await dapi("files/" + arq.id + "?alt=media")).text()));
+      const rs = remoto.meta.salvoEm || "", ls = S.meta.salvoEm || "";
+      if (rs > ls) { remoto.config.driveClientId = remoto.config.driveClientId || S.config.driveClientId; S = remoto; localStorage.setItem(KEY, JSON.stringify(S)); mudou = true; }
+      else if (ls > rs) subir = true;
+    }
+    for (const f of S.fotos.filter(f => !f.driveId)) {
+      const b = await idb.get(f.id).catch(() => null); if (!b) continue;
+      f.driveId = await dCriar(f.id + ".jpg", b, pasta, "image/jpeg");
+      subir = true; mudou = true;
+    }
+    if (subir) {
+      S.meta.salvoEm = S.meta.salvoEm || new Date().toISOString();
+      localStorage.setItem(KEY, JSON.stringify(S));
+      const blob = new Blob([JSON.stringify(S)], { type: "application/json" });
+      if (arq) await dAtualizar(arq.id, blob, "application/json"); else await dCriar("assistencia.json", blob, pasta, "application/json");
+    }
+    DRIVE.estado = "sync"; DRIVE.quando = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    DRIVE.estado = tokenValido() ? "err" : "off"; DRIVE.erro = e.message;
+    if (interativo) alert("Não sincronizou: " + e.message);
+  }
+  if (mudou || tela === "ajustes") render(); else cabecalho();
+}
+function agendarSync() {
+  if (!tokenValido()) return;
+  clearTimeout(DRIVE.timer);
+  DRIVE.timer = setTimeout(() => sincronizar(false), 3000);
+}
+
+// --- calendário do celular (.ics) ---------------------------------------
+function baixar(nome, conteudo, tipo) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  a.download = nome; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+}
+function ics(v) {
+  const c = chamado(v.chamadoId) || {}, im = imovel(c.imovelId) || {};
+  const h = (v.hora || "08:00").replace(":", "");
+  const ini = v.data.replace(/-/g, "") + "T" + h + "00";
+  const fim = v.data.replace(/-/g, "") + "T" + String(Number(h.slice(0, 2)) + 1).padStart(2, "0") + h.slice(2) + "00";
+  const t = s => String(s || "").replace(/[\\;,]/g, "\\$&").replace(/\n/g, "\\n");
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//assistencia//PT", "BEGIN:VEVENT", "UID:" + v.id + "@assistencia",
+    "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z", "DTSTART:" + ini, "DTEND:" + fim,
+    "SUMMARY:" + t("Visita: " + (im.cliente || "") + " — " + ((tipoG(c.tipoId) || {}).nome || "")),
+    "LOCATION:" + t([im.endereco, im.empreendimento].filter(Boolean).join(", ")),
+    "DESCRIPTION:" + t((VTIPO[v.tipo] || "") + "\n" + (c.descricao || "") + (im.telefone ? "\nTel: " + im.telefone : "") + (v.obs ? "\n" + v.obs : "")),
+    "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+}
+
+// --- eventos ------------------------------------------------------------
+let fotoRef = null;
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-act],[data-dia],[data-mes],[data-fst]");
+  if (!t) return;
+  if (t.dataset.dia) { diaSel = t.dataset.dia; return render(); }
+  if (t.dataset.mes !== undefined) {
+    if (t.dataset.mes === "0") { mesAgenda = hoje().slice(0, 7); diaSel = hoje(); }
+    else { const [y, m] = mesAgenda.split("-").map(Number); const d = new Date(y, m - 1 + Number(t.dataset.mes), 1); mesAgenda = iso(d).slice(0, 7); }
+    return render();
+  }
+  if (t.dataset.fst) { filtro.status = t.dataset.fst; return render(); }
+  acao(t.dataset.act, t.dataset.id, t);
+});
+function acao(a, id, el) {
+  const c = chamado(id), v = visita(id), im = imovel(id);
+  switch (a) {
+    case "voltar": mostrarDetalhe = false; return render();
+    case "fecharDlg": return dlg.close();
+    case "novoChamado": return formChamado(null, tela === "imoveis" && mostrarDetalhe ? selIm : null);
+    case "novoChamadoIm": return formChamado(null, id);
+    case "editarChamado": return formChamado(c);
+    case "selChamado": if (tela !== "chamados") return abrirChamado(id); sel = id; mostrarDetalhe = true; return render();
+    case "abrirChamado": return abrirChamado(id);
+    case "abrirImovel": return abrirImovel(id);
+    case "selImovel": selIm = id; mostrarDetalhe = true; return render();
+    case "novoImovel": return formImovel();
+    case "editarImovel": return formImovel(im);
+    case "imovelNoForm": {
+      const f = dlg.querySelector("form"), guardado = f ? Object.fromEntries(new FormData(f).entries()) : {};
+      dlg.close();
+      return formImovel(null, novo => { formChamado(Object.assign({}, guardado, { id: undefined, cortesia: !!guardado.cortesia }), novo.id); });
+    }
+    case "excluirImovel": {
+      const n = S.chamados.filter(x => x.imovelId === id).length;
+      if (!confirm("Excluir o imóvel" + (n ? " e seus " + n + " chamados" : "") + "?")) return;
+      const cs = S.chamados.filter(x => x.imovelId === id).map(x => x.id);
+      S.chamados = S.chamados.filter(x => x.imovelId !== id);
+      S.visitas.filter(x => cs.includes(x.chamadoId)).forEach(x => fotosDe(x.id).forEach(f => excluirFoto(f.id)));
+      cs.forEach(x => fotosDe(x).forEach(f => excluirFoto(f.id)));
+      S.visitas = S.visitas.filter(x => !cs.includes(x.chamadoId));
+      S.imoveis = S.imoveis.filter(x => x.id !== id);
+      selIm = null; mostrarDetalhe = false; salvar(); return render();
+    }
+    case "excluirChamado": {
+      if (!confirm("Excluir o chamado e suas visitas?")) return;
+      visitasDe(id).forEach(x => fotosDe(x.id).forEach(f => excluirFoto(f.id)));
+      fotosDe(id).forEach(f => excluirFoto(f.id));
+      S.visitas = S.visitas.filter(x => x.chamadoId !== id);
+      S.chamados = S.chamados.filter(x => x.id !== id);
+      sel = null; mostrarDetalhe = false; salvar(); return render();
+    }
+    case "encerrar": return formEncerrar(c);
+    case "reabrir": c.encerrado = null; salvar(); return render();
+    case "novaVisita": return formVisita(null, id);
+    case "visitaNoDia": if (!abertos().length) return alert("Não há chamado em aberto pra marcar visita."); return formVisita(null, null, diaSel);
+    case "editarVisita": return formVisita(v, v.chamadoId);
+    case "concluir": return formConcluir(v);
+    case "excluirVisita":
+      if (!confirm("Excluir essa visita?")) return;
+      fotosDe(id).forEach(f => excluirFoto(f.id));
+      S.visitas = S.visitas.filter(x => x.id !== id); salvar(); return render();
+    case "ics": return baixar("visita-" + v.data + ".ics", ics(v), "text/calendar");
+    case "addFoto": fotoRef = el.dataset.ref; return document.getElementById("fileFoto").click();
+    case "verFoto": return verFoto(id);
+    case "rmFoto": if (!confirm("Excluir a foto?")) return; dlg.close(); return excluirFoto(id).then(render);
+    case "addMat": return document.getElementById("mats").insertAdjacentHTML("beforeend", linhaMat());
+    case "addGar": lerAjustes(); S.config.garantias.push({ id: uid(), nome: "Novo tipo", anos: 1 }); salvar(); return render();
+    case "rmGar": if (S.chamados.some(x => x.tipoId === id)) return alert("Tem chamado usando esse tipo."); lerAjustes(); S.config.garantias = S.config.garantias.filter(g => g.id !== id); salvar(); return render();
+    case "addPessoa": lerAjustes(); S.config.pessoas.push({ id: uid(), nome: "", padrao: !S.config.pessoas.length }); salvar(); return render();
+    case "rmPessoa": if (S.config.pessoas.length === 1) return alert("Precisa ter pelo menos uma pessoa."); lerAjustes(); S.config.pessoas = S.config.pessoas.filter(p => p.id !== id); if (!S.config.pessoas.some(p => p.padrao)) S.config.pessoas[0].padrao = true; salvar(); return render();
+    case "salvarCfg": lerAjustes(); salvar(); render(); return alert("Ajustes salvos.");
+    case "sync": lerAjustes(); salvar(); return sincronizar(true);
+    case "exportar": S.config.ultimoBackup = hoje(); salvar(); baixar("assistencia-" + hoje() + ".json", JSON.stringify(S, null, 1), "application/json"); return render();
+    case "importar": return document.getElementById("fileImp").click();
+  }
+}
+document.addEventListener("input", e => {
+  if (e.target.id === "fBusca") { filtro.busca = e.target.value; document.getElementById("lista").innerHTML = listaChamados(); }
+  if (e.target.id === "fBuscaIm") { buscaIm = e.target.value; document.getElementById("listaIm").innerHTML = listaImoveis(); }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "fEmp") { filtro.emp = e.target.value; return render(); }
+  if (dlg.open && ["imovelId", "tipoId", "data"].includes(e.target.name)) infoGarantiaForm();
+  if (dlg.open && e.target.name === "resolveu") { const p = document.getElementById("fProx"); if (p) p.style.display = e.target.value === "0" ? "block" : "none"; }
+  if (e.target.id === "fileFoto" && e.target.files.length) { guardarFotos([...e.target.files], fotoRef).then(render); e.target.value = ""; }
+  if (e.target.id === "fileImp" && e.target.files.length) {
+    const fr = new FileReader();
+    fr.onload = () => {
+      try {
+        const d = JSON.parse(fr.result);
+        if (!d || !Array.isArray(d.imoveis)) throw 0;
+        if (!confirm("Substituir os dados atuais por " + d.chamados.length + " chamados do backup?")) return;
+        S = migrar(d); salvar(); render(); alert("Backup restaurado.");
+      } catch (err) { alert("Arquivo inválido."); }
+    };
+    fr.readAsText(e.target.files[0]); e.target.value = "";
+  }
+});
+main.addEventListener("click", e => { if (e.target.matches("img[data-foto]") && e.target.src) verFoto(e.target.dataset.foto); });
+document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => ir(b.dataset.tab));
+document.getElementById("btnDrive").onclick = () => { if (!S.config.driveClientId) { ir("ajustes"); return alert("Cole o Client ID do Google nos ajustes pra conectar ao Drive."); } sincronizar(true); };
+
+// --- autoteste: abrir com ?teste=1 -------------------------------------
+function autoteste() {
+  const ok = [];
+  const T = (nome, cond) => ok.push((cond ? "ok   " : "FALHA") + "  " + nome);
+  const bkp = S; S = PADRAO();
+  S.imoveis = [{ id: "i1", cliente: "Ana", telefone: "11999990000", empreendimento: "Res. Sol", endereco: "casa 1", entrega: "2023-03-10" }];
+  S.chamados = [
+    { id: "c1", imovelId: "i1", data: "2026-01-05", canal: "whatsapp", tipoId: "pintura", descricao: "", cortesia: false, encerrado: null, criadoEm: "" },
+    { id: "c2", imovelId: "i1", data: "2026-01-05", canal: "whatsapp", tipoId: "imperm", descricao: "", cortesia: false, encerrado: null, criadoEm: "" }
+  ];
+  T("garantia de 1 ano venceu (entrega 2023, chamado 2026)", garantia(S.chamados[0]).vencida === true && garantia(S.chamados[0]).ate === "2024-03-10");
+  T("garantia de 5 anos ainda vale", garantia(S.chamados[1]).vencida === false && garantia(S.chamados[1]).ate === "2028-03-10");
+  T("chamado sem visita = aberto e aparece em 'sem visita'", statusDe(S.chamados[1]) === "aberto" && semVisita(S.chamados[1]));
+  S.visitas = [{ id: "v1", chamadoId: "c2", data: "2026-01-08", hora: "09:00", tipo: "avaliacao", pessoaId: "p1", feita: false, relato: "", resolveu: null, materiais: [] }];
+  T("visita marcada = agendado", statusDe(S.chamados[1]) === "agendado" && !semVisita(S.chamados[1]));
+  T("visita marcada no passado = atrasada", atrasada(S.visitas[0]) === true);
+  S.visitas[0].feita = true; S.visitas[0].resolveu = false;
+  T("visita feita sem resolver = em andamento, sem visita marcada", statusDe(S.chamados[1]) === "andamento" && semVisita(S.chamados[1]));
+  S.chamados[1].encerrado = { status: "resolvido", data: "2026-01-08" };
+  T("encerrado manda no status", statusDe(S.chamados[1]) === "resolvido");
+  T("whatsapp põe o 55", wa("(11) 99999-0000") === "https://wa.me/5511999990000" && wa("5511999990000") === "https://wa.me/5511999990000");
+  T("addAnos respeita ano bissexto", addAnos("2024-02-29", 1) === "2025-03-01");
+  const i = ics(S.visitas[0]);
+  T("ics tem data/hora e endereço", i.includes("DTSTART:20260108T090000") && i.includes("DTEND:20260108T100000") && i.includes("LOCATION:casa 1\\, Res. Sol"));
+  T("num aceita vírgula", num("1.234,50") === 1234.5 && isNaN(num("")));
+  let montou = true; try { vAgenda(); vPainel(); vChamados(); vImoveis(); vAjustes(); } catch (e) { montou = false; console.error(e); }
+  T("todas as telas montam com dados", montou);
+  S = PADRAO();
+  try { vAgenda(); vPainel(); vChamados(); vImoveis(); } catch (e) { montou = false; console.error(e); }
+  T("todas as telas montam vazias", montou);
+  S = bkp;
+  document.body.innerHTML = '<pre style="padding:16px;font:13px ui-monospace,monospace;white-space:pre-wrap">' +
+    ok.join("\n") + "\n\n" + (ok.some(x => x.startsWith("FALHA")) ? "TEM FALHA" : "tudo passou") + "</pre>";
+}
+
+if (location.search.includes("teste")) autoteste();
+else {
+  render();
+  if (tokenValido()) sincronizar(false);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => { });
+}
+</script>
+</body>
+</html>
