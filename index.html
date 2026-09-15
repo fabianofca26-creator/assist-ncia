@@ -490,7 +490,8 @@ function detalheChamado(c) {
       <dt>Contato</dt><dd>${dBR(c.data)} · ${CANAL[c.canal] || c.canal || "—"}</dd>
       ${im.horarios ? `<dt>Atende</dt><dd>${esc(im.horarios)}</dd>` : ""}
       <dt>Descrição</dt><dd style="white-space:pre-wrap">${esc(c.descricao) || "—"}</dd>
-      ${c.encerrado ? `<dt>Encerrado</dt><dd>${STATUS[c.encerrado.status][0]} em ${dBR(c.encerrado.data)}${c.encerrado.obs ? " — " + esc(c.encerrado.obs) : ""}</dd>` : ""}
+      ${c.encerrado ? `<dt>Encerrado</dt><dd>${STATUS[c.encerrado.status][0]} em ${dBR(c.encerrado.data)}${c.encerrado.obs ? " — " + esc(c.encerrado.obs) : ""} <button class="icobtn" style="padding:0 4px;font-size:12px" data-act="encerrar" data-id="${c.id}">editar</button></dd>` : ""}
+      ${c.encerrado && c.encerrado.servicos ? `<dt>Serviços</dt><dd style="white-space:pre-wrap">${esc(c.encerrado.servicos)}</dd>` : ""}
       ${custo ? `<dt>Material</dt><dd>${money(custo)}</dd>` : ""}
     </dl>
     <div class="fotos">${fotosDe(c.id).map(f => `<img data-foto="${f.id}" alt="">`).join("")}<button class="add" data-act="addFoto" data-ref="${c.id}" aria-label="Adicionar foto">+</button></div>
@@ -872,7 +873,7 @@ function formConcluir(v) {
     v.materiais = nomes.map((n, i) => ({ nome: n.trim(), qtd: qtds[i].trim(), valor: finito(num(vals[i])) ? num(vals[i]) : null })).filter(m => m.nome);
     v.feita = true; v.relato = d.relato.trim(); v.resolveu = d.resolveu === "1";
     const c = chamado(v.chamadoId);
-    if (v.resolveu && c && !c.encerrado) c.encerrado = { status: "resolvido", data: v.data, obs: "" };
+    if (v.resolveu && c && !c.encerrado) setTimeout(() => formEncerrar(c, { status: "resolvido", data: v.data }));
     if (!v.resolveu && d.proxData) S.visitas.push({ id: uid(), chamadoId: v.chamadoId, data: d.proxData, hora: d.proxHora, tipo: "retorno", pessoaId: v.pessoaId, obs: "", feita: false, relato: "", resolveu: null, materiais: [] });
     salvar();
     const fotos = fd.getAll("fotos").filter(f => f && f.size);
@@ -880,13 +881,18 @@ function formConcluir(v) {
     render();
   });
 }
-function formEncerrar(c) {
-  abrirForm(`<h2>Encerrar chamado</h2>
-    <div class="field"><label>Motivo</label><select name="status">
-      <option value="resolvido">Resolvido</option><option value="fora_garantia">Fora de garantia — não atendido</option><option value="nao_procede">Não procede</option></select></div>
-    <div class="field"><label>Data</label><input name="data" type="date" required value="${hoje()}"></div>
-    <div class="field"><label>Observação</label><input name="obs" placeholder="opcional"></div>`,
-  d => { c.encerrado = { status: d.status, data: d.data, obs: d.obs.trim(), assinatura: null }; salvar(); render(); });
+const servicosDasVisitas = c => visitasDe(c.id).filter(v => v.feita)
+  .map(v => dBR(v.data) + " — " + (v.relato || "") + (v.materiais.length ? " (material: " + v.materiais.map(m => m.nome + (m.qtd ? " " + m.qtd : "")).join(", ") + ")" : "")).join("\n");
+function formEncerrar(c, ini) {
+  const e = Object.assign({ status: "resolvido", data: hoje(), obs: "", servicos: servicosDasVisitas(c) }, c.encerrado || {}, ini || {});
+  abrirForm(`<h2>${c.encerrado ? "Editar encerramento" : "Encerrar chamado"}</h2>
+    <div class="grid2 field">
+      <div><label>Motivo</label><select name="status">${[["resolvido", "Resolvido"], ["fora_garantia", "Fora de garantia — não atendido"], ["nao_procede", "Não procede"]].map(([k, n]) => `<option value="${k}" ${e.status === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+      <div><label>Data de encerramento</label><input name="data" type="date" required value="${e.data}"></div>
+    </div>
+    <div class="field"><label>Serviços realizados (sai no formulário)</label><textarea name="servicos" style="min-height:110px" placeholder="O que foi feito pra resolver">${esc(e.servicos)}</textarea></div>
+    <div class="field"><label>Observação</label><input name="obs" value="${esc(e.obs)}" placeholder="opcional — justificativa se não procede"></div>`,
+  d => { c.encerrado = Object.assign({ assinatura: null }, c.encerrado || {}, { status: d.status, data: d.data, obs: d.obs.trim(), servicos: d.servicos.trim() }); salvar(); render(); });
 }
 function formAssinatura(c) {
   abrirForm(`<h2>Assinatura coletada</h2>
@@ -1076,7 +1082,7 @@ function htmlFormulario(c) {
   const justif = c.encerrado && c.encerrado.status === "nao_procede" ? c.encerrado.obs
     : c.encerrado && c.encerrado.status === "fora_garantia" ? "Fora do prazo de garantia" + (g ? " (venceu em " + dBR(g.ate) + ")" : "") + (c.encerrado.obs ? " — " + c.encerrado.obs : "")
     : g && g.vencida && c.cortesia ? "Fora do prazo de garantia (venceu em " + dBR(g.ate) + ") — atendido por cortesia" : "";
-  const servicos = vs.map(v => dBR(v.data) + " — " + (v.relato || "") + (v.materiais.length ? " (material: " + v.materiais.map(m => m.nome + (m.qtd ? " " + m.qtd : "")).join(", ") + ")" : "")).join("\n");
+  const servicos = c.encerrado && c.encerrado.servicos ? c.encerrado.servicos : servicosDasVisitas(c);
   const solicitacao = ((tipoG(c.tipoId) || {}).nome ? (tipoG(c.tipoId) || {}).nome + ": " : "") + (c.descricao || "");
   // célula: colunas (A=1..P=16) e linhas da planilha
   const C = (c1, c2, r1, r2, cls, html) => `<div class="c ${cls || ""}" style="grid-column:${c1}/${c2 + 1};grid-row:${r1}/${r2 + 1}">${html || ""}</div>`;
@@ -1298,6 +1304,8 @@ function autoteste() {
   T("visita feita sem resolver = em andamento, sem visita marcada", statusDe(S.chamados[1]) === "andamento" && semVisita(S.chamados[1]));
   S.chamados[1].encerrado = { status: "resolvido", data: "2026-01-08" };
   T("encerrado manda no status", statusDe(S.chamados[1]) === "resolvido");
+  S.visitas[0].relato = "trocou o rejunte"; S.visitas[0].materiais = [{ nome: "Rejunte", qtd: "1 kg", valor: 40 }];
+  T("resumo dos serviços vem das visitas feitas", servicosDasVisitas(S.chamados[1]) === "08/01/2026 — trocou o rejunte (material: Rejunte 1 kg)");
   T("encerrado sem assinatura fica pendente; com assinatura não", semAssinatura(S.chamados[1]) === true && !semAssinatura(Object.assign({}, S.chamados[1], { encerrado: { status: "resolvido", data: "2026-01-08", assinatura: { data: "2026-01-09" } } })));
   const mg = migrar({ chamados: [{ id: "a", criadoEm: "2026-02-01" }, { id: "b", criadoEm: "2026-01-01" }, { id: "c", criadoEm: "2026-03-01", seq: 7 }] });
   T("nº sequencial: mantém o existente e numera os outros pela criação", mg.chamados.map(x => x.seq).join() === "9,8,7" && fmtSeq(9) === "0009");
