@@ -236,6 +236,7 @@ const PADRAO = () => ({
       { id: "outro", nome: "Outro", anos: 1 }
     ],
     pessoas: [{ id: "p1", nome: "Faz-tudo", padrao: true }],
+    responsavel: "",
     driveClientId: "",
     ultimoBackup: null
   },
@@ -257,6 +258,9 @@ function migrar(d) {
     i.condominioId = c.id; delete i.empreendimento;
   });
   d.visitas.forEach(v => { v.materiais = v.materiais || []; });
+  // nº sequencial do formulário: quem não tem ganha pela ordem de criação
+  let seq = Math.max(0, ...d.chamados.map(c => c.seq || 0));
+  d.chamados.slice().sort((a, b) => (a.criadoEm || "").localeCompare(b.criadoEm || "")).forEach(c => { if (!c.seq) c.seq = ++seq; });
   return d;
 }
 function carregar() {
@@ -330,6 +334,9 @@ const tagGarantia = c => {
 const atrasada = v => !v.feita && v.data < hoje();
 const semVisita = c => !c.encerrado && !visitasDe(c.id).some(v => !v.feita);
 const abertos = () => S.chamados.filter(c => !c.encerrado);
+const proxSeq = () => Math.max(0, ...S.chamados.map(c => c.seq || 0)) + 1;
+const fmtSeq = n => String(n || 0).padStart(4, "0");
+const semAssinatura = c => c.encerrado && !c.encerrado.assinatura;
 function tituloChamado(c) { const im = imovel(c.imovelId); return (im ? im.cliente : "?") + " — " + (tipoG(c.tipoId) || { nome: "?" }).nome; }
 
 // --- estado de tela -----------------------------------------------------
@@ -387,6 +394,7 @@ function vAgenda() {
   const atras = S.visitas.filter(atrasada).sort((a, b) => a.data.localeCompare(b.data));
   const prox = S.visitas.filter(v => !v.feita && v.data > hoje() && v.data <= addDias(hoje(), 7)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
   const semV = abertos().filter(semVisita);
+  const semAss = S.chamados.filter(semAssinatura).sort((a, b) => a.encerrado.data.localeCompare(b.encerrado.data));
   return `<div class="agenda"><div>
     <div class="cal-h">
       <button class="icobtn" data-mes="-1" aria-label="mês anterior"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
@@ -402,6 +410,7 @@ function vAgenda() {
     ${atras.length ? '<p class="sec-t" style="color:var(--er-tx)">atrasadas</p>' + atras.map(cardVisita).join("") : ""}
     ${prox.length ? '<p class="sec-t">próximos 7 dias</p>' + prox.map(cardVisita).join("") : ""}
     ${semV.length ? '<p class="sec-t">chamados sem visita marcada</p><div class="rows">' + semV.map(rowChamado).join("") + "</div>" : ""}
+    ${semAss.length ? '<p class="sec-t">assinaturas pendentes</p><div class="rows">' + semAss.map(rowChamado).join("") + "</div>" : ""}
   </div></div>`;
 }
 function cardVisita(v) {
@@ -470,8 +479,9 @@ function detalheChamado(c) {
       <p style="margin:2px 0;font-size:13px;color:var(--tx2)">${esc([im.endereco, nomeCond(im)].filter(Boolean).join(" — "))}</p></div>
       <div>${tagStatus(c)}</div>
     </div>
-    <div style="margin:8px 0">${tagGarantia(c)}</div>
+    <div style="margin:8px 0">${tagGarantia(c)} ${c.encerrado ? (c.encerrado.assinatura ? `<span class="tag ok">assinado em ${dBR(c.encerrado.assinatura.data)}</span>` : '<span class="tag wa">assinatura pendente</span>') : ""}</div>
     <dl class="info">
+      <dt>Nº</dt><dd>${fmtSeq(c.seq)}</dd>
       <dt>Problema</dt><dd><b>${esc((tipoG(c.tipoId) || {}).nome || "?")}</b></dd>
       <dt>Contato</dt><dd>${dBR(c.data)} · ${CANAL[c.canal] || c.canal || "—"}</dd>
       ${im.horarios ? `<dt>Atende</dt><dd>${esc(im.horarios)}</dd>` : ""}
@@ -483,6 +493,8 @@ function detalheChamado(c) {
     <div class="acts">
       ${im.telefone ? `<a class="btn sec sm" style="text-decoration:none;display:inline-block" href="${wa(im.telefone)}" target="_blank">WhatsApp</a>` : ""}
       <button class="btn sec sm" data-act="editarChamado" data-id="${c.id}">editar</button>
+      <button class="btn sec sm" data-act="formulario" data-id="${c.id}">🖨 formulário</button>
+      ${semAssinatura(c) ? `<button class="btn sm" data-act="assinado" data-id="${c.id}">assinatura coletada</button>` : ""}
       ${c.encerrado ? `<button class="btn sec sm" data-act="reabrir" data-id="${c.id}">reabrir</button>` : `<button class="btn sec sm" data-act="encerrar" data-id="${c.id}">encerrar</button>`}
       <button class="btn sec sm" style="color:var(--er-tx)" data-act="excluirChamado" data-id="${c.id}">excluir</button>
     </div>
@@ -628,6 +640,7 @@ function vPainel() {
     <div class="kpi"><p>tempo médio p/ resolver</p><b>${finito(medio) ? Math.round(medio) : "—"} <span>dias</span></b></div>
     <div class="kpi"><p>material lançado</p><b style="font-size:20px">${money(custo)}</b></div>
     <div class="kpi"><p>resolvidos</p><b>${res.length} <span>de ${S.chamados.length}</span></b></div>
+    <div class="kpi"><p>assinaturas pendentes</p><b style="${S.chamados.some(semAssinatura) ? "color:var(--wa-tx)" : ""}">${S.chamados.filter(semAssinatura).length}</b></div>
   </div>
   <p class="sec-t">problemas por condomínio</p>
   ${emps.length ? emps.map(([e, d]) => `<div class="card"><b>${esc(e)}</b> <span class="mut">· ${d.n} chamado${d.n > 1 ? "s" : ""} · ${d.ims.size} casa${d.ims.size > 1 ? "s" : ""}</span>
@@ -655,6 +668,11 @@ function vAjustes() {
       <button class="icobtn" data-act="rmPessoa" data-id="${p.id}" aria-label="remover">✕</button></div>`).join("")}
     <button class="btn sec sm" data-act="addPessoa">+ pessoa</button>
   </div>
+  <p class="sec-t">formulário PSQ 08-04</p>
+  <div class="card">
+    <div class="field"><label for="aResp">Engenheiro / responsável (assina pela empresa)</label><input id="aResp" value="${esc(S.config.responsavel)}" placeholder="Nome como vai no formulário"></div>
+    <p class="mut" style="font-size:12px;margin:0">Próximo nº sequencial: <b>${fmtSeq(proxSeq())}</b> — pode ser ajustado ao abrir cada chamado.</p>
+  </div>
   <p class="sec-t">google drive</p>
   <div class="card">
     <div class="field"><label for="aCid">Client ID (do Google Cloud)</label><input id="aCid" value="${esc(S.config.driveClientId)}" placeholder="123456-abc.apps.googleusercontent.com" style="font-size:12px"></div>
@@ -680,6 +698,8 @@ function lerAjustes() {
   document.querySelectorAll("[data-p]").forEach(el => { const p = pessoa(el.dataset.p); if (p) p.nome = el.value.trim() || p.nome; });
   const r = document.querySelector("input[name=padrao]:checked");
   if (r) S.config.pessoas.forEach(p => p.padrao = p.id === r.value);
+  const resp = document.getElementById("aResp");
+  if (resp) S.config.responsavel = resp.value.trim();
   const cid = document.getElementById("aCid");
   if (cid) S.config.driveClientId = cid.value.trim();
 }
@@ -760,11 +780,12 @@ function formChamado(c, imovelId) {
     </div>
     <div class="field"><label>Tipo de problema</label>${selectTipos(c.tipoId)}<p id="gInfo" class="mut" style="font-size:12px;margin:5px 0 0"></p></div>
     <div class="field"><label>Descrição</label><textarea name="descricao" placeholder="O que o cliente relatou">${esc(c.descricao)}</textarea></div>
+    <div class="field" style="max-width:160px"><label>Nº sequencial (formulário)</label><input name="seq" inputmode="numeric" value="${c.seq || proxSeq()}"></div>
     <div class="field" id="fCortesia" style="display:none"><label style="display:flex;align-items:center;font-size:14px;color:var(--tx)"><input type="checkbox" name="cortesia" ${c.cortesia ? "checked" : ""}>Atender mesmo fora da garantia (cortesia)</label></div>
     ${novo ? '<div class="field"><label>Fotos do problema</label><input type="file" name="fotos" accept="image/*" multiple></div>' : ""}`,
   (d, fd) => {
     const o = novo ? { id: uid(), criadoEm: new Date().toISOString(), encerrado: null } : c;
-    Object.assign(o, { imovelId: d.imovelId, data: d.data, canal: d.canal, tipoId: d.tipoId, descricao: d.descricao.trim(), cortesia: !!d.cortesia });
+    Object.assign(o, { imovelId: d.imovelId, data: d.data, canal: d.canal, tipoId: d.tipoId, descricao: d.descricao.trim(), cortesia: !!d.cortesia, seq: num(d.seq) > 0 ? Math.round(num(d.seq)) : proxSeq() });
     if (novo) S.chamados.push(o);
     salvar();
     const fotos = fd.getAll("fotos").filter(f => f && f.size);
@@ -856,7 +877,20 @@ function formEncerrar(c) {
       <option value="resolvido">Resolvido</option><option value="fora_garantia">Fora de garantia — não atendido</option><option value="nao_procede">Não procede</option></select></div>
     <div class="field"><label>Data</label><input name="data" type="date" required value="${hoje()}"></div>
     <div class="field"><label>Observação</label><input name="obs" placeholder="opcional"></div>`,
-  d => { c.encerrado = { status: d.status, data: d.data, obs: d.obs.trim() }; salvar(); render(); });
+  d => { c.encerrado = { status: d.status, data: d.data, obs: d.obs.trim(), assinatura: null }; salvar(); render(); });
+}
+function formAssinatura(c) {
+  abrirForm(`<h2>Assinatura coletada</h2>
+    <p class="mut" style="font-size:13px;margin:-8px 0 12px">${esc(tituloChamado(c))} · formulário nº ${fmtSeq(c.seq)}</p>
+    <div class="field"><label>Data da assinatura</label><input name="data" type="date" required value="${hoje()}"></div>
+    <div class="field"><label>Foto do formulário assinado (opcional, fica como evidência)</label><input type="file" name="fotos" accept="image/*" multiple></div>`,
+  (d, fd) => {
+    c.encerrado.assinatura = { data: d.data };
+    salvar();
+    const fotos = fd.getAll("fotos").filter(f => f && f.size);
+    if (fotos.length) guardarFotos(fotos, c.id).then(render);
+    render();
+  });
 }
 function verFoto(id) {
   const f = S.fotos.find(x => x.id === id);
@@ -1018,6 +1052,73 @@ function agendarSync() {
   DRIVE.timer = setTimeout(() => sincronizar(false), 3000);
 }
 
+// --- formulário PSQ 08-04: réplica em HTML da planilha da empresa ---------
+// Grade = colunas A..P e linhas 1..37 da planilha, com as mesmas mesclagens;
+// alturas em pt × 0,72 (a planilha é impressa "ajustar à página").
+const LOGO = "data:image/jpeg;base64,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";
+function htmlFormulario(c) {
+  const im = imovel(c.imovelId) || {}, g = garantia(c);
+  const vs = visitasDe(c.id).filter(v => v.feita);
+  const resp = S.config.responsavel || "";
+  const e = esc;
+  const linhas = txt => e(txt).replace(/\n/g, "<br>");
+  const avaliacao = vs[0], ultima = vs[vs.length - 1];
+  const garantiaOk = g ? !g.vencida : null;
+  const justif = c.encerrado && c.encerrado.status === "nao_procede" ? c.encerrado.obs
+    : c.encerrado && c.encerrado.status === "fora_garantia" ? "Fora do prazo de garantia" + (g ? " (venceu em " + dBR(g.ate) + ")" : "") + (c.encerrado.obs ? " — " + c.encerrado.obs : "")
+    : g && g.vencida && c.cortesia ? "Fora do prazo de garantia (venceu em " + dBR(g.ate) + ") — atendido por cortesia" : "";
+  const servicos = vs.map(v => dBR(v.data) + " — " + (v.relato || "") + (v.materiais.length ? " (material: " + v.materiais.map(m => m.nome + (m.qtd ? " " + m.qtd : "")).join(", ") + ")" : "")).join("\n");
+  const solicitacao = ((tipoG(c.tipoId) || {}).nome ? (tipoG(c.tipoId) || {}).nome + ": " : "") + (c.descricao || "");
+  // célula: colunas (A=1..P=16) e linhas da planilha
+  const C = (c1, c2, r1, r2, cls, html) => `<div class="c ${cls || ""}" style="grid-column:${c1}/${c2 + 1};grid-row:${r1}/${r2 + 1}">${html || ""}</div>`;
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Form. PSQ 08 - 04 nº ${fmtSeq(c.seq)}</title>
+<style>
+@page{size:A4 portrait;margin:8mm 8mm 9mm 8mm}
+html,body{margin:0;background:#fff;color:#000;font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif}
+.pg{width:194mm;margin:0 auto}
+.f{display:grid;border:1.2pt solid #000;
+  grid-template-columns:2.18% 5.93% 5.33% 5.33% 4.95% 3.98% 5.1% 8.1% 19.43% 5.7% 3.45% 3.08% 5.7% 2.93% 9.75% 2.06%;
+  grid-template-rows:42pt 20pt 20pt 20pt 20pt repeat(5,20.5pt) 20pt 20pt 20pt 20pt repeat(3,20.5pt) 18pt 20pt repeat(11,20.5pt) 18pt 28pt 18pt 18pt 18pt 18pt 12pt}
+.c{font-size:7pt;padding:0 3pt;display:flex;align-items:center;overflow:hidden;line-height:1.15}
+.b{font-weight:700;white-space:nowrap}.ctr{justify-content:center;text-align:center}.top{align-items:flex-start;padding-top:2pt}
+.u{border-bottom:.9pt solid #000}
+.h{background:#d9d9d9;justify-content:center;font-weight:700;border-top:.9pt solid #000;border-bottom:.9pt solid #000;font-size:7pt}
+.tit{font-size:9.5pt;font-weight:700;justify-content:center;text-align:center}
+.logo{justify-content:center;border-right:.9pt solid #000;border-bottom:.9pt solid #000;padding:2pt}
+.logo img{max-height:36pt;max-width:100%}
+.lines{align-items:flex-start;white-space:pre-wrap;line-height:20.5pt;padding:0 3pt;font-size:8pt;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent 19.6pt,#000 19.6pt,#000 20.5pt)}
+.val{font-size:8pt;font-family:"Segoe UI",Arial,sans-serif}
+.decl{font-size:6.8pt;justify-content:center;text-align:center;padding:0 10pt}
+.rod{font-size:6.5pt;justify-content:flex-end}
+.chk{font-size:7pt}
+@media screen{body{padding:10mm 0;background:#888}.pg{background:#fff;padding:8mm;box-shadow:0 2px 12px rgba(0,0,0,.4)}}
+</style></head><body onload="setTimeout(print, 300)"><div class="pg"><div class="f">
+${C(1, 4, 1, 1, "logo", `<img src="${LOGO}" alt="AB Forte Incorporações">`)}
+${C(5, 16, 1, 1, "tit", "Form. PSQ 08 - 04 Solicitação de assistência técnica pós-obra")}
+${C(1, 3, 2, 2, "b", "EMPREENDIMENTO:")}${C(4, 11, 2, 2, "u val", e(nomeCond(im)))}${C(12, 13, 2, 2, "b ctr", "Nº SEQUENCIAL:")}${C(14, 16, 2, 2, "u val ctr", fmtSeq(c.seq))}
+${C(1, 3, 3, 3, "b", "PROPRIETÁRIO:")}${C(4, 16, 3, 3, "u val", e(im.cliente))}
+${C(1, 2, 4, 4, "b", "UNIDADE:")}${C(3, 8, 4, 4, "u val", e(im.endereco))}${C(9, 11, 4, 4, "b ctr", "TELEFONE PARA CONTATO:")}${C(12, 16, 4, 4, "u val", e(im.telefone))}
+${C(1, 16, 5, 5, "h", "SOLICITAÇÃO DO CLIENTE")}
+${C(2, 15, 6, 10, "lines", linhas(solicitacao))}
+${C(1, 2, 11, 11, "b", "Data :")}${C(3, 6, 11, 11, "u val", dBR(c.data))}${C(7, 8, 11, 11, "b ctr", "Responsável:")}${C(9, 16, 11, 11, "u val", e(resp))}
+${C(1, 16, 12, 12, "b", "Os problemas detectados pela Engenharia estão dentro da Garantia da Edificação?")}
+${C(1, 5, 13, 13, "chk", `&nbsp;&nbsp;&nbsp;(&nbsp;&nbsp;${garantiaOk === true ? "X" : "&nbsp;&nbsp;"}&nbsp;&nbsp;)&nbsp; Sim &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp;&nbsp;${garantiaOk === false ? "X" : "&nbsp;&nbsp;"}&nbsp;&nbsp;)&nbsp; Não`)}
+${C(6, 6, 13, 13, "b ctr", "Data:")}${C(7, 8, 13, 13, "u val", avaliacao ? dBR(avaliacao.data) : "")}${C(9, 10, 13, 13, "b ctr", "Responsável:")}${C(11, 16, 13, 13, "u val", e(resp))}
+${C(1, 7, 14, 14, "b", "EM CASO DE SOLICITAÇÃO NÃO PROCEDENTE, JUSTIFICAR:")}${C(8, 16, 14, 14, "u val", e(justif.slice(0, 90)))}
+${C(2, 15, 15, 17, "lines", linhas(justif.slice(90)))}
+${C(1, 16, 18, 18, "h", "SERVIÇOS REALIZADOS")}
+${C(6, 6, 19, 19, "b ctr", "Data:")}${C(7, 8, 19, 19, "u val", ultima ? dBR(ultima.data) : "")}${C(9, 10, 19, 19, "b ctr", "Responsável:")}${C(11, 16, 19, 19, "u val", e(ultima ? (pessoa(ultima.pessoaId) || {}).nome || resp : resp))}
+${C(2, 15, 20, 30, "lines", linhas(servicos))}
+${C(1, 16, 31, 31, "h", "VALIDAÇÃO DO CLIENTE")}
+${C(1, 16, 32, 32, "decl", "Declaro que os serviços de assistência técnica solicitados acima, foram executados satisfatóriamente pela construtora, ficando portanto sanados todos os problemas acima elencados.")}
+${C(4, 8, 34, 34, "u", "")}${C(10, 15, 34, 34, "u", "")}
+${C(4, 8, 35, 35, "ctr", "Assinatura Engenheiro ou Responsável")}${C(10, 15, 35, 35, "ctr", "Assinatura do Proprietário ou Responsável")}
+${C(1, 2, 36, 36, "b", "Data:")}${C(3, 4, 36, 36, "u val", c.encerrado ? dBR(c.encerrado.data) : "")}
+${C(13, 16, 37, 37, "rod", "Revisão: 02 &nbsp;-&nbsp; Data: 13/03/2023")}
+</div></div></body></html>`;
+}
+
 // --- calendário do celular (.ics) ---------------------------------------
 function baixar(nome, conteudo, tipo) {
   const a = document.createElement("a");
@@ -1107,6 +1208,8 @@ function acao(a, id, el) {
     }
     case "encerrar": return formEncerrar(c);
     case "reabrir": c.encerrado = null; salvar(); return render();
+    case "assinado": return formAssinatura(c);
+    case "formulario": { const w = open("", "_blank"); if (!w) return alert("O navegador bloqueou a janela. Permita pop-ups pra este site."); w.document.write(htmlFormulario(c)); w.document.close(); return; }
     case "novaVisita": return formVisita(null, id);
     case "visitaNoDia": if (!abertos().length) return alert("Não há chamado em aberto pra marcar visita."); return formVisita(null, null, diaSel);
     case "editarVisita": return formVisita(v, v.chamadoId);
@@ -1182,6 +1285,11 @@ function autoteste() {
   T("visita feita sem resolver = em andamento, sem visita marcada", statusDe(S.chamados[1]) === "andamento" && semVisita(S.chamados[1]));
   S.chamados[1].encerrado = { status: "resolvido", data: "2026-01-08" };
   T("encerrado manda no status", statusDe(S.chamados[1]) === "resolvido");
+  T("encerrado sem assinatura fica pendente; com assinatura não", semAssinatura(S.chamados[1]) === true && !semAssinatura(Object.assign({}, S.chamados[1], { encerrado: { status: "resolvido", data: "2026-01-08", assinatura: { data: "2026-01-09" } } })));
+  const mg = migrar({ chamados: [{ id: "a", criadoEm: "2026-02-01" }, { id: "b", criadoEm: "2026-01-01" }, { id: "c", criadoEm: "2026-03-01", seq: 7 }] });
+  T("nº sequencial: mantém o existente e numera os outros pela criação", mg.chamados.map(x => x.seq).join() === "9,8,7" && fmtSeq(9) === "0009");
+  let html = ""; try { html = htmlFormulario(S.chamados[1]); } catch (err) { console.error(err); }
+  T("formulário monta com os dados do chamado", html.includes("Ana") && html.includes("Res. Sol") && html.includes("Revisão: 02") && html.includes("Form. PSQ 08 - 04"));
   T("whatsapp põe o 55", wa("(11) 99999-0000") === "https://wa.me/5511999990000" && wa("5511999990000") === "https://wa.me/5511999990000");
   T("addAnos respeita ano bissexto", addAnos("2024-02-29", 1) === "2025-03-01");
   const i = ics(S.visitas[0]);

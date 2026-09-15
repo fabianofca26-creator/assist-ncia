@@ -1,0 +1,7 @@
+# documentos da empresa ficam fora do repositorio publico
+*.xls
+*.xlsx
+*.pdf
+*.docx
+logo.jpg
+_*
