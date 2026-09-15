@@ -375,7 +375,7 @@ function vAgenda() {
 
   const doDia = (porDia[diaSel] || []).sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
   const atras = S.visitas.filter(atrasada).sort((a, b) => a.data.localeCompare(b.data));
-  const prox = S.visitas.filter(v => !v.feita && v.data >= hoje() && v.data <= addDias(hoje(), 7)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
+  const prox = S.visitas.filter(v => !v.feita && v.data > hoje() && v.data <= addDias(hoje(), 7)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
   const semV = abertos().filter(semVisita);
   return `<div class="agenda"><div>
     <div class="cal-h">
@@ -404,6 +404,7 @@ function cardVisita(v) {
     </div>
     <p style="margin:3px 0;font-size:13px;color:var(--tx2)">${diaSemana(v.data)} ${dBR(v.data)} · ${esc((tipoG(c.tipoId) || {}).nome || "")}${!v.feita ? " · " + esc((pessoa(v.pessoaId) || {}).nome || "") : ""}</p>
     <p style="margin:3px 0;font-size:13px">${esc([im.endereco, nomeCond(im)].filter(Boolean).join(" — "))}</p>
+    ${im.horarios ? `<p style="margin:3px 0;font-size:12.5px;color:var(--tx2)">🕐 atende: ${esc(im.horarios)}</p>` : ""}
     <div class="acts" style="margin-top:8px">
       <button class="btn sec sm" data-act="abrirChamado" data-id="${c.id}">abrir chamado</button>
       ${!v.feita ? `<button class="btn sm" data-act="concluir" data-id="${v.id}">concluir</button>` : ""}
@@ -463,6 +464,7 @@ function detalheChamado(c) {
     <dl class="info">
       <dt>Problema</dt><dd><b>${esc((tipoG(c.tipoId) || {}).nome || "?")}</b></dd>
       <dt>Contato</dt><dd>${dBR(c.data)} · ${CANAL[c.canal] || c.canal || "—"}</dd>
+      ${im.horarios ? `<dt>Atende</dt><dd>${esc(im.horarios)}</dd>` : ""}
       <dt>Descrição</dt><dd style="white-space:pre-wrap">${esc(c.descricao) || "—"}</dd>
       ${c.encerrado ? `<dt>Encerrado</dt><dd>${STATUS[c.encerrado.status][0]} em ${dBR(c.encerrado.data)}${c.encerrado.obs ? " — " + esc(c.encerrado.obs) : ""}</dd>` : ""}
       ${custo ? `<dt>Material</dt><dd>${money(custo)}</dd>` : ""}
@@ -540,6 +542,7 @@ function detalheImovel(im) {
     <dl class="info">
       <dt>Telefone</dt><dd>${im.telefone ? `${esc(im.telefone)} · <a href="${wa(im.telefone)}" target="_blank">WhatsApp</a>` : "—"}</dd>
       <dt>Endereço</dt><dd>${esc(im.endereco) || "—"}</dd>
+      <dt>Atende</dt><dd>${esc(im.horarios) || '<span class="mut">horários não informados</span>'}</dd>
       <dt>Condomínio</dt><dd>${cd ? `<button class="icobtn" style="padding:0;font-size:inherit" data-act="selCond" data-id="${cd.id}">${esc(cd.nome)}</button>` : "—"}</dd>
       <dt>Entrega</dt><dd>${entrega ? dBR(entrega) + ` <span class="mut">(há ${dias(entrega, hoje())} dias${!im.entrega ? ", data do condomínio" : ""})</span>` : '<span class="tag wa">sem data — garantia não calcula</span>'}</dd>
       ${im.obs ? `<dt>Obs.</dt><dd style="white-space:pre-wrap">${esc(im.obs)}</dd>` : ""}
@@ -706,11 +709,12 @@ function formImovel(im, depois, condominioId) {
     <div class="field"><label>Condomínio</label>${selectConds(im.condominioId || condominioId)}
       ${!im.id ? '<button type="button" class="icobtn" data-act="condNoForm" style="margin-top:4px">+ cadastrar condomínio novo</button>' : ""}</div>
     <div class="field"><label>Endereço / unidade</label><input name="endereco" value="${esc(im.endereco)}" placeholder="Rua, nº, casa 12"></div>
+    <div class="field"><label>Horários em que pode atender</label><input name="horarios" value="${esc(im.horarios)}" placeholder="seg a sex após 18h, sáb de manhã"></div>
     <div class="field"><label>Observações</label><textarea name="obs" style="min-height:56px">${esc(im.obs)}</textarea></div>`,
   d => {
     const novo = !im.id;
     const o = novo ? { id: uid(), criadoEm: new Date().toISOString() } : im;
-    Object.assign(o, { cliente: d.cliente.trim(), telefone: d.telefone.trim(), entrega: d.entrega, condominioId: d.condominioId || null, endereco: d.endereco.trim(), obs: d.obs.trim() });
+    Object.assign(o, { cliente: d.cliente.trim(), telefone: d.telefone.trim(), horarios: d.horarios.trim(), entrega: d.entrega, condominioId: d.condominioId || null, endereco: d.endereco.trim(), obs: d.obs.trim() });
     if (novo) S.imoveis.push(o);
     salvar();
     if (depois) setTimeout(() => depois(o)); else { selIm = o.id; selCond = null; render(); }
@@ -773,7 +777,9 @@ function infoGarantiaForm() {
 function formVisita(v, chamadoId, dataIni) {
   v = v || {};
   const novo = !v.id;
+  const hor = chamadoId ? (imovel((chamado(chamadoId) || {}).imovelId) || {}).horarios : "";
   abrirForm(`<h2>${novo ? "Agendar visita" : "Editar visita"}</h2>
+    ${hor ? `<div class="note in" style="margin-top:-6px">🕐 <span>Cliente atende: <b style="display:inline">${esc(hor)}</b></span></div>` : ""}
     ${novo && !chamadoId ? `<div class="field"><label>Chamado</label><select name="chamadoId" required><option value="">— escolha —</option>${abertos().map(c => `<option value="${c.id}">${esc(tituloChamado(c))}</option>`).join("")}</select></div>` : ""}
     <div class="grid2 field">
       <div><label>Data</label><input name="data" type="date" required value="${v.data || dataIni || hoje()}"></div>
