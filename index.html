@@ -134,6 +134,15 @@ dl.info dd{margin:0}
 .cal .d .pts i{width:7px;height:7px;border-radius:50%;background:var(--in-tx);display:block}
 .cal .d .pts i.feita{background:var(--ok-tx)}
 .cal .d .pts i.atras{background:var(--er-tx)}
+.sem{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px}
+.sem button{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 3px;font-size:11px;cursor:pointer;text-align:left;min-height:58px;display:flex;flex-direction:column;gap:2px;color:inherit;overflow:hidden}
+.sem button b{font-size:11px;font-weight:600}
+.sem button b span{font-weight:400;color:var(--tx3)}
+.sem button[aria-pressed=true]{border-color:var(--ac);border-width:2px;background:var(--in-bg)}
+.sem button.hoje b{color:var(--in-tx)}
+.sem button i{font-style:normal;font-size:10.5px;padding:1px 4px;border-radius:4px;background:var(--in-bg);color:var(--in-tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sem button i.feita{background:var(--ok-bg);color:var(--ok-tx)}
+.sem .livre{font-size:10.5px;color:var(--ok-tx)}
 /* duas colunas */
 .split{display:block}
 .split .pane{min-width:0}
@@ -324,6 +333,7 @@ const abertos = () => S.chamados.filter(c => !c.encerrado);
 function tituloChamado(c) { const im = imovel(c.imovelId); return (im ? im.cliente : "?") + " — " + (tipoG(c.tipoId) || { nome: "?" }).nome; }
 
 // --- estado de tela -----------------------------------------------------
+let formVisitaId = null;
 let tela = "agenda", sel = null, selIm = null, selCond = null, mostrarDetalhe = false, filtroCond = "";
 let mesAgenda = hoje().slice(0, 7), diaSel = hoje();
 let filtro = { busca: "", status: "abertos", emp: "" }, buscaIm = "";
@@ -774,12 +784,27 @@ function infoGarantiaForm() {
   p.style.color = g.vencida ? "var(--er-tx)" : "var(--ok-tx)";
   fc.style.display = g.vencida ? "block" : "none";
 }
+// semana do dia escolhido (seg a dom), com o que já está marcado em cada dia
+function semanaForm(ref, ignorarId) {
+  const d0 = new Date(ref + "T12:00:00"); d0.setDate(d0.getDate() - (d0.getDay() + 6) % 7);
+  let out = "";
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(d0); d.setDate(d0.getDate() + i); const s = iso(d);
+    const vs = S.visitas.filter(v => v.data === s && v.id !== ignorarId).sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
+    out += `<button type="button" class="${s === hoje() ? "hoje" : ""}" data-diaform="${s}" aria-pressed="${s === ref}"><b>${diaSemana(s)} <span>${s.slice(8, 10)}</span></b>
+      ${vs.slice(0, 3).map(v => `<i class="${v.feita ? "feita" : ""}">${v.hora || "--:--"} ${esc((imovel((chamado(v.chamadoId) || {}).imovelId) || {}).cliente || "?").split(" ")[0]}</i>`).join("")}
+      ${vs.length > 3 ? `<i>+${vs.length - 3}</i>` : ""}${vs.length ? "" : '<span class="livre">livre</span>'}</button>`;
+  }
+  return out;
+}
 function formVisita(v, chamadoId, dataIni) {
   v = v || {};
   const novo = !v.id;
   const hor = chamadoId ? (imovel((chamado(chamadoId) || {}).imovelId) || {}).horarios : "";
+  formVisitaId = v.id;
   abrirForm(`<h2>${novo ? "Agendar visita" : "Editar visita"}</h2>
     ${hor ? `<div class="note in" style="margin-top:-6px">🕐 <span>Cliente atende: <b style="display:inline">${esc(hor)}</b></span></div>` : ""}
+    <label>Como está a semana</label><div class="sem" id="semana">${semanaForm(v.data || dataIni || hoje(), v.id)}</div>
     ${novo && !chamadoId ? `<div class="field"><label>Chamado</label><select name="chamadoId" required><option value="">— escolha —</option>${abertos().map(c => `<option value="${c.id}">${esc(tituloChamado(c))}</option>`).join("")}</select></div>` : ""}
     <div class="grid2 field">
       <div><label>Data</label><input name="data" type="date" required value="${v.data || dataIni || hoje()}"></div>
@@ -1017,7 +1042,7 @@ function ics(v) {
 // --- eventos ------------------------------------------------------------
 let fotoRef = null;
 document.addEventListener("click", e => {
-  const t = e.target.closest("[data-act],[data-dia],[data-mes],[data-fst]");
+  const t = e.target.closest("[data-act],[data-dia],[data-mes],[data-fst],[data-diaform]");
   if (!t) return;
   if (t.dataset.dia) { diaSel = t.dataset.dia; return render(); }
   if (t.dataset.mes !== undefined) {
@@ -1026,6 +1051,7 @@ document.addEventListener("click", e => {
     return render();
   }
   if (t.dataset.fst) { filtro.status = t.dataset.fst; return render(); }
+  if (t.dataset.diaform) { const f = dlg.querySelector("form"); f.data.value = t.dataset.diaform; document.getElementById("semana").innerHTML = semanaForm(t.dataset.diaform, formVisitaId); return; }
   acao(t.dataset.act, t.dataset.id, t);
 });
 function acao(a, id, el) {
@@ -1112,6 +1138,7 @@ document.addEventListener("change", e => {
   if (e.target.id === "fEmp") { filtro.emp = e.target.value; return render(); }
   if (e.target.id === "fCond") { filtroCond = e.target.value; return render(); }
   if (dlg.open && ["imovelId", "tipoId", "data"].includes(e.target.name)) infoGarantiaForm();
+  if (dlg.open && e.target.name === "data" && document.getElementById("semana") && e.target.value) document.getElementById("semana").innerHTML = semanaForm(e.target.value, formVisitaId);
   if (dlg.open && e.target.name === "resolveu") { const p = document.getElementById("fProx"); if (p) p.style.display = e.target.value === "0" ? "block" : "none"; }
   if (e.target.id === "fileFoto" && e.target.files.length) { guardarFotos([...e.target.files], fotoRef).then(render); e.target.value = ""; }
   if (e.target.id === "fileImp" && e.target.files.length) {
