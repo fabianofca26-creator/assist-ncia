@@ -318,18 +318,22 @@ function statusDe(c) {
   return "aberto";
 }
 const tagStatus = c => { const s = STATUS[statusDe(c)]; return `<span class="tag ${s[1]}">${s[0]}</span>`; };
+// c.garantia: "auto" (pela data), "dentro" ou "fora" (decisão manual, ex.: mau uso)
 function garantia(c) {
   const im = imovel(c.imovelId), g = tipoG(c.tipoId);
   const entrega = entregaDe(im);
-  if (!entrega || !g) return null;
-  const ate = addAnos(entrega, g.anos);
-  return { ate, vencida: c.data > ate, dias: dias(c.data, ate) };
+  const manual = c.garantia === "dentro" || c.garantia === "fora";
+  if ((!entrega || !g) && !manual) return null;
+  const ate = entrega && g ? addAnos(entrega, g.anos) : null;
+  const vencida = manual ? c.garantia === "fora" : c.data > ate;
+  return { ate, vencida, manual, dias: ate ? dias(c.data, ate) : null };
 }
 const tagGarantia = c => {
   const g = garantia(c);
   if (!g) return '<span class="tag mut">garantia: sem data de entrega</span>';
-  return g.vencida ? `<span class="tag er">garantia venceu em ${dBR(g.ate)}</span>${c.cortesia ? ' <span class="tag wa">cortesia</span>' : ""}`
-    : `<span class="tag ok">na garantia até ${dBR(g.ate)}</span>`;
+  const m = g.manual ? " (manual)" : "";
+  return g.vencida ? `<span class="tag er">fora da garantia${m}${g.ate && !g.manual ? " — venceu em " + dBR(g.ate) : ""}</span>${c.cortesia ? ' <span class="tag wa">cortesia</span>' : ""}`
+    : `<span class="tag ok">na garantia${m}${g.ate && !g.manual ? " até " + dBR(g.ate) : ""}</span>`;
 };
 const atrasada = v => !v.feita && v.data < hoje();
 const semVisita = c => !c.encerrado && !visitasDe(c.id).some(v => !v.feita);
@@ -778,14 +782,18 @@ function formChamado(c, imovelId) {
       <div><label>Data do contato</label><input name="data" type="date" required value="${c.data || hoje()}"></div>
       <div><label>Por onde chegou</label><select name="canal">${Object.entries(CANAL).map(([k, v]) => `<option value="${k}" ${(c.canal || "whatsapp") === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
     </div>
-    <div class="field"><label>Tipo de problema</label>${selectTipos(c.tipoId)}<p id="gInfo" class="mut" style="font-size:12px;margin:5px 0 0"></p></div>
+    <div class="grid2 field">
+      <div><label>Tipo de problema</label>${selectTipos(c.tipoId)}</div>
+      <div><label>Garantia</label><select name="garantia">${[["auto", "Automático (pela data)"], ["dentro", "Dentro — decisão manual"], ["fora", "Fora — decisão manual"]].map(([k, n]) => `<option value="${k}" ${(c.garantia || "auto") === k ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+    </div>
+    <p id="gInfo" class="mut" style="font-size:12px;margin:-6px 0 12px"></p>
     <div class="field"><label>Descrição</label><textarea name="descricao" placeholder="O que o cliente relatou">${esc(c.descricao)}</textarea></div>
     <div class="field" style="max-width:160px"><label>Nº sequencial (formulário)</label><input name="seq" inputmode="numeric" value="${c.seq || proxSeq()}"></div>
     <div class="field" id="fCortesia" style="display:none"><label style="display:flex;align-items:center;font-size:14px;color:var(--tx)"><input type="checkbox" name="cortesia" ${c.cortesia ? "checked" : ""}>Atender mesmo fora da garantia (cortesia)</label></div>
     ${novo ? '<div class="field"><label>Fotos do problema</label><input type="file" name="fotos" accept="image/*" multiple></div>' : ""}`,
   (d, fd) => {
     const o = novo ? { id: uid(), criadoEm: new Date().toISOString(), encerrado: null } : c;
-    Object.assign(o, { imovelId: d.imovelId, data: d.data, canal: d.canal, tipoId: d.tipoId, descricao: d.descricao.trim(), cortesia: !!d.cortesia, seq: num(d.seq) > 0 ? Math.round(num(d.seq)) : proxSeq() });
+    Object.assign(o, { imovelId: d.imovelId, data: d.data, canal: d.canal, tipoId: d.tipoId, descricao: d.descricao.trim(), cortesia: !!d.cortesia, garantia: d.garantia || "auto", seq: num(d.seq) > 0 ? Math.round(num(d.seq)) : proxSeq() });
     if (novo) S.chamados.push(o);
     salvar();
     const fotos = fd.getAll("fotos").filter(f => f && f.size);
@@ -797,11 +805,12 @@ function formChamado(c, imovelId) {
 // no formulário, mostra na hora se o problema ainda está na garantia
 function infoGarantiaForm() {
   const f = dlg.querySelector("form"); if (!f || !f.imovelId) return;
-  const c = { imovelId: f.imovelId.value, tipoId: f.tipoId.value, data: f.data.value || hoje() };
+  const c = { imovelId: f.imovelId.value, tipoId: f.tipoId.value, data: f.data.value || hoje(), garantia: f.garantia.value };
   const g = garantia(c), p = document.getElementById("gInfo"), fc = document.getElementById("fCortesia");
   if (!f.imovelId.value) { p.textContent = ""; fc.style.display = "none"; return; }
   if (!g) { p.textContent = "Imóvel sem data de entrega — não dá pra calcular a garantia."; p.style.color = "var(--wa-tx)"; fc.style.display = "none"; return; }
-  p.textContent = g.vencida ? "⚠ Garantia desse item venceu em " + dBR(g.ate) : "Na garantia até " + dBR(g.ate) + " (faltam " + g.dias + " dias)";
+  p.textContent = g.manual ? (g.vencida ? "⚠ Marcado manualmente como fora da garantia" : "Marcado manualmente como dentro da garantia") + (g.ate ? " (pela data: " + (c.data > g.ate ? "venceu em " : "vale até ") + dBR(g.ate) + ")" : "")
+    : g.vencida ? "⚠ Garantia desse item venceu em " + dBR(g.ate) : "Na garantia até " + dBR(g.ate) + " (faltam " + g.dias + " dias)";
   p.style.color = g.vencida ? "var(--er-tx)" : "var(--ok-tx)";
   fc.style.display = g.vencida ? "block" : "none";
 }
@@ -1242,7 +1251,7 @@ document.addEventListener("input", e => {
 document.addEventListener("change", e => {
   if (e.target.id === "fEmp") { filtro.emp = e.target.value; return render(); }
   if (e.target.id === "fCond") { filtroCond = e.target.value; return render(); }
-  if (dlg.open && ["imovelId", "tipoId", "data"].includes(e.target.name)) infoGarantiaForm();
+  if (dlg.open && ["imovelId", "tipoId", "data", "garantia"].includes(e.target.name)) infoGarantiaForm();
   if (dlg.open && e.target.name === "data" && document.getElementById("semana") && e.target.value) document.getElementById("semana").innerHTML = semanaForm(e.target.value, formVisitaId);
   if (dlg.open && e.target.name === "resolveu") { const p = document.getElementById("fProx"); if (p) p.style.display = e.target.value === "0" ? "block" : "none"; }
   if (e.target.id === "fileFoto" && e.target.files.length) { guardarFotos([...e.target.files], fotoRef).then(render); e.target.value = ""; }
@@ -1279,6 +1288,8 @@ function autoteste() {
   ];
   T("garantia de 1 ano venceu (entrega 2023, chamado 2026)", garantia(S.chamados[0]).vencida === true && garantia(S.chamados[0]).ate === "2024-03-10");
   T("garantia de 5 anos ainda vale", garantia(S.chamados[1]).vencida === false && garantia(S.chamados[1]).ate === "2028-03-10");
+  T("decisão manual 'fora' vence a data", garantia(Object.assign({}, S.chamados[1], { garantia: "fora" })).vencida === true && garantia(Object.assign({}, S.chamados[0], { garantia: "dentro" })).vencida === false);
+  T("manual funciona mesmo sem data de entrega", garantia({ imovelId: "nada", tipoId: "pintura", data: "2026-01-01", garantia: "fora" }).vencida === true);
   T("chamado sem visita = aberto e aparece em 'sem visita'", statusDe(S.chamados[1]) === "aberto" && semVisita(S.chamados[1]));
   S.visitas = [{ id: "v1", chamadoId: "c2", data: "2026-01-08", hora: "09:00", tipo: "avaliacao", pessoaId: "p1", feita: false, relato: "", resolveu: null, materiais: [] }];
   T("visita marcada = agendado", statusDe(S.chamados[1]) === "agendado" && !semVisita(S.chamados[1]));
