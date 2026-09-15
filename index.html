@@ -1071,10 +1071,12 @@ function htmlFormulario(c) {
   const solicitacao = ((tipoG(c.tipoId) || {}).nome ? (tipoG(c.tipoId) || {}).nome + ": " : "") + (c.descricao || "");
   // célula: colunas (A=1..P=16) e linhas da planilha
   const C = (c1, c2, r1, r2, cls, html) => `<div class="c ${cls || ""}" style="grid-column:${c1}/${c2 + 1};grid-row:${r1}/${r2 + 1}">${html || ""}</div>`;
+  // área pautada: texto corrido por cima + uma borda por linha da planilha
+  const L = (c1, c2, r1, r2, html) => { let o = ""; for (let r = r1; r <= r2; r++) o += `<div class="ln" style="grid-column:${c1}/${c2 + 1};grid-row:${r}/${r + 1}"></div>`; return o + C(c1, c2, r1, r2, "lines", html); };
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Form. PSQ 08 - 04 nº ${fmtSeq(c.seq)}</title>
 <style>
 @page{size:A4 portrait;margin:8mm 8mm 9mm 8mm}
-html,body{margin:0;background:#fff;color:#000;font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif}
+html,body{margin:0;background:#fff;color:#000;font-family:Calibri,Carlito,"Segoe UI",Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .pg{width:194mm;margin:0 auto}
 .f{display:grid;border:1.2pt solid #000;
   grid-template-columns:2.18% 5.93% 5.33% 5.33% 4.95% 3.98% 5.1% 8.1% 19.43% 5.7% 3.45% 3.08% 5.7% 2.93% 9.75% 2.06%;
@@ -1086,8 +1088,8 @@ html,body{margin:0;background:#fff;color:#000;font-family:Calibri,Carlito,"Segoe
 .tit{font-size:9.5pt;font-weight:700;justify-content:center;text-align:center}
 .logo{justify-content:center;border-right:.9pt solid #000;border-bottom:.9pt solid #000;padding:2pt}
 .logo img{max-height:36pt;max-width:100%}
-.lines{align-items:flex-start;white-space:pre-wrap;line-height:20.5pt;padding:0 3pt;font-size:8pt;
-  background:repeating-linear-gradient(to bottom,transparent 0,transparent 19.6pt,#000 19.6pt,#000 20.5pt)}
+.lines{align-items:flex-start;white-space:pre-wrap;line-height:20.5pt;padding:0 3pt;font-size:8pt;position:relative;z-index:1}
+.ln{border-bottom:.9pt solid #000}
 .val{font-size:8pt;font-family:"Segoe UI",Arial,sans-serif}
 .decl{font-size:6.8pt;justify-content:center;text-align:center;padding:0 10pt}
 .rod{font-size:6.5pt;justify-content:flex-end}
@@ -1100,16 +1102,16 @@ ${C(1, 3, 2, 2, "b", "EMPREENDIMENTO:")}${C(4, 11, 2, 2, "u val", e(nomeCond(im)
 ${C(1, 3, 3, 3, "b", "PROPRIETÁRIO:")}${C(4, 16, 3, 3, "u val", e(im.cliente))}
 ${C(1, 2, 4, 4, "b", "UNIDADE:")}${C(3, 8, 4, 4, "u val", e(im.endereco))}${C(9, 11, 4, 4, "b ctr", "TELEFONE PARA CONTATO:")}${C(12, 16, 4, 4, "u val", e(im.telefone))}
 ${C(1, 16, 5, 5, "h", "SOLICITAÇÃO DO CLIENTE")}
-${C(2, 15, 6, 10, "lines", linhas(solicitacao))}
+${L(2, 15, 6, 10, linhas(solicitacao))}
 ${C(1, 2, 11, 11, "b", "Data :")}${C(3, 6, 11, 11, "u val", dBR(c.data))}${C(7, 8, 11, 11, "b ctr", "Responsável:")}${C(9, 16, 11, 11, "u val", e(resp))}
 ${C(1, 16, 12, 12, "b", "Os problemas detectados pela Engenharia estão dentro da Garantia da Edificação?")}
 ${C(1, 5, 13, 13, "chk", `&nbsp;&nbsp;&nbsp;(&nbsp;&nbsp;${garantiaOk === true ? "X" : "&nbsp;&nbsp;"}&nbsp;&nbsp;)&nbsp; Sim &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (&nbsp;&nbsp;${garantiaOk === false ? "X" : "&nbsp;&nbsp;"}&nbsp;&nbsp;)&nbsp; Não`)}
 ${C(6, 6, 13, 13, "b ctr", "Data:")}${C(7, 8, 13, 13, "u val", avaliacao ? dBR(avaliacao.data) : "")}${C(9, 10, 13, 13, "b ctr", "Responsável:")}${C(11, 16, 13, 13, "u val", e(resp))}
 ${C(1, 7, 14, 14, "b", "EM CASO DE SOLICITAÇÃO NÃO PROCEDENTE, JUSTIFICAR:")}${C(8, 16, 14, 14, "u val", e(justif.slice(0, 90)))}
-${C(2, 15, 15, 17, "lines", linhas(justif.slice(90)))}
+${L(2, 15, 15, 17, linhas(justif.slice(90)))}
 ${C(1, 16, 18, 18, "h", "SERVIÇOS REALIZADOS")}
 ${C(6, 6, 19, 19, "b ctr", "Data:")}${C(7, 8, 19, 19, "u val", ultima ? dBR(ultima.data) : "")}${C(9, 10, 19, 19, "b ctr", "Responsável:")}${C(11, 16, 19, 19, "u val", e(ultima ? (pessoa(ultima.pessoaId) || {}).nome || resp : resp))}
-${C(2, 15, 20, 30, "lines", linhas(servicos))}
+${L(2, 15, 20, 30, linhas(servicos))}
 ${C(1, 16, 31, 31, "h", "VALIDAÇÃO DO CLIENTE")}
 ${C(1, 16, 32, 32, "decl", "Declaro que os serviços de assistência técnica solicitados acima, foram executados satisfatóriamente pela construtora, ficando portanto sanados todos os problemas acima elencados.")}
 ${C(4, 8, 34, 34, "u", "")}${C(10, 15, 34, 34, "u", "")}
