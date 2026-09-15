@@ -231,7 +231,7 @@ const PADRAO = () => ({
     ultimoBackup: null
   },
   meta: { salvoEm: null },
-  imoveis: [], chamados: [], visitas: [], fotos: []
+  condominios: [], imoveis: [], chamados: [], visitas: [], fotos: []
 });
 
 let S = carregar();
@@ -239,7 +239,14 @@ function migrar(d) {
   const p = PADRAO();
   d.config = Object.assign(p.config, d.config || {});
   d.meta = d.meta || { salvoEm: null };
-  for (const k of ["imoveis", "chamados", "visitas", "fotos"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  for (const k of ["condominios", "imoveis", "chamados", "visitas", "fotos"]) d[k] = Array.isArray(d[k]) ? d[k] : [];
+  // v1 guardava o empreendimento como texto no imóvel; vira cadastro de condomínio
+  d.imoveis.forEach(i => {
+    if (!i.empreendimento) { delete i.empreendimento; return; }
+    let c = d.condominios.find(x => x.nome === i.empreendimento);
+    if (!c) { c = { id: uid(), nome: i.empreendimento, endereco: "", entrega: "", obs: "" }; d.condominios.push(c); }
+    i.condominioId = c.id; delete i.empreendimento;
+  });
   d.visitas.forEach(v => { v.materiais = v.materiais || []; });
   return d;
 }
@@ -277,7 +284,12 @@ const pessoa = id => S.config.pessoas.find(x => x.id === id);
 const pessoaPadrao = () => S.config.pessoas.find(p => p.padrao) || S.config.pessoas[0];
 const visitasDe = cid => S.visitas.filter(v => v.chamadoId === cid).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
 const fotosDe = ref => S.fotos.filter(f => f.ref === ref);
-const empreendimentos = () => [...new Set(S.imoveis.map(i => i.empreendimento).filter(Boolean))].sort();
+const cond = id => S.condominios.find(x => x.id === id);
+const nomeCond = im => (cond((im || {}).condominioId) || {}).nome || "";
+// casa sem data própria herda a do condomínio
+const entregaDe = im => im ? (im.entrega || (cond(im.condominioId) || {}).entrega || "") : "";
+const casasDe = cid => S.imoveis.filter(i => i.condominioId === cid).sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR"));
+const condsOrdenados = () => S.condominios.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 
 const STATUS = { aberto: ["Aberto", "in"], agendado: ["Agendado", "in"], andamento: ["Em andamento", "wa"], resolvido: ["Resolvido", "ok"], fora_garantia: ["Fora de garantia", "er"], nao_procede: ["Não procede", "mut"] };
 const VTIPO = { avaliacao: "Avaliação", execucao: "Execução", retorno: "Retorno" };
@@ -295,8 +307,9 @@ function statusDe(c) {
 const tagStatus = c => { const s = STATUS[statusDe(c)]; return `<span class="tag ${s[1]}">${s[0]}</span>`; };
 function garantia(c) {
   const im = imovel(c.imovelId), g = tipoG(c.tipoId);
-  if (!im || !im.entrega || !g) return null;
-  const ate = addAnos(im.entrega, g.anos);
+  const entrega = entregaDe(im);
+  if (!entrega || !g) return null;
+  const ate = addAnos(entrega, g.anos);
   return { ate, vencida: c.data > ate, dias: dias(c.data, ate) };
 }
 const tagGarantia = c => {
@@ -311,14 +324,14 @@ const abertos = () => S.chamados.filter(c => !c.encerrado);
 function tituloChamado(c) { const im = imovel(c.imovelId); return (im ? im.cliente : "?") + " — " + (tipoG(c.tipoId) || { nome: "?" }).nome; }
 
 // --- estado de tela -----------------------------------------------------
-let tela = "agenda", sel = null, selIm = null, mostrarDetalhe = false;
+let tela = "agenda", sel = null, selIm = null, selCond = null, mostrarDetalhe = false, filtroCond = "";
 let mesAgenda = hoje().slice(0, 7), diaSel = hoje();
 let filtro = { busca: "", status: "abertos", emp: "" }, buscaIm = "";
 const main = document.getElementById("main");
 
 function ir(t) { tela = t; mostrarDetalhe = false; render(); }
 function abrirChamado(id) { tela = "chamados"; sel = id; mostrarDetalhe = true; render(); }
-function abrirImovel(id) { tela = "imoveis"; selIm = id; mostrarDetalhe = true; render(); }
+function abrirImovel(id) { tela = "imoveis"; selIm = id; selCond = null; mostrarDetalhe = true; render(); }
 
 function cabecalho() {
   const tit = { agenda: "Agenda", chamados: "Chamados", imoveis: "Imóveis", painel: "Painel", ajustes: "Ajustes" }[tela];
@@ -390,7 +403,7 @@ function cardVisita(v) {
       <span class="tag ${v.feita ? "ok" : at ? "er" : "in"}">${v.feita ? "feita" : at ? "atrasada" : VTIPO[v.tipo] || v.tipo}</span>
     </div>
     <p style="margin:3px 0;font-size:13px;color:var(--tx2)">${diaSemana(v.data)} ${dBR(v.data)} · ${esc((tipoG(c.tipoId) || {}).nome || "")}${!v.feita ? " · " + esc((pessoa(v.pessoaId) || {}).nome || "") : ""}</p>
-    <p style="margin:3px 0;font-size:13px">${esc([im.endereco, im.empreendimento].filter(Boolean).join(" — "))}</p>
+    <p style="margin:3px 0;font-size:13px">${esc([im.endereco, nomeCond(im)].filter(Boolean).join(" — "))}</p>
     <div class="acts" style="margin-top:8px">
       <button class="btn sec sm" data-act="abrirChamado" data-id="${c.id}">abrir chamado</button>
       ${!v.feita ? `<button class="btn sm" data-act="concluir" data-id="${v.id}">concluir</button>` : ""}
@@ -404,7 +417,7 @@ function rowChamado(c) {
   const im = imovel(c.imovelId) || {}, g = garantia(c);
   const prox = visitasDe(c.id).find(v => !v.feita);
   return `<button class="row" data-act="selChamado" data-id="${c.id}" aria-current="${c.id === sel}">
-    <div class="g"><b>${esc(im.cliente || "?")} <span class="mut" style="font-weight:400">· ${esc(im.empreendimento || "")}</span></b>
+    <div class="g"><b>${esc(im.cliente || "?")} <span class="mut" style="font-weight:400">· ${esc(nomeCond(im))}</span></b>
     <small>${esc((tipoG(c.tipoId) || {}).nome || "")} · aberto ${dBR(c.data)}${g && g.vencida ? " · ⚠ fora da garantia" : ""}</small></div>
     <div class="v">${tagStatus(c)}${prox ? `<small class="mut" style="display:block;font-size:11px">visita ${dBR(prox.data)}</small>` : ""}</div>
   </button>`;
@@ -415,8 +428,8 @@ function listaChamados() {
     if (filtro.status === "abertos" && c.encerrado) return false;
     if (filtro.status === "encerrados" && !c.encerrado) return false;
     const im = imovel(c.imovelId) || {};
-    if (filtro.emp && im.empreendimento !== filtro.emp) return false;
-    if (q && !norm([im.cliente, im.endereco, im.empreendimento, c.descricao, (tipoG(c.tipoId) || {}).nome].join(" ")).includes(q)) return false;
+    if (filtro.emp && im.condominioId !== filtro.emp) return false;
+    if (q && !norm([im.cliente, im.endereco, nomeCond(im), c.descricao, (tipoG(c.tipoId) || {}).nome].join(" ")).includes(q)) return false;
     return true;
   }).sort((a, b) => b.data.localeCompare(a.data) || b.criadoEm.localeCompare(a.criadoEm));
   return l.length ? `<div class="rows">${l.map(rowChamado).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum chamado.</p>';
@@ -429,7 +442,7 @@ function vChamados() {
       <div style="margin-bottom:4px">
         ${["abertos", "encerrados", "todos"].map(s => `<button class="chip" data-fst="${s}" aria-pressed="${filtro.status === s}">${s}</button>`).join("")}
       </div>
-      ${empreendimentos().length ? `<div class="field"><select id="fEmp"><option value="">todos os empreendimentos</option>${empreendimentos().map(e => `<option ${filtro.emp === e ? "selected" : ""}>${esc(e)}</option>`).join("")}</select></div>` : ""}
+      ${S.condominios.length ? `<div class="field"><select id="fEmp"><option value="">todos os condomínios</option>${condsOrdenados().map(e => `<option value="${e.id}" ${filtro.emp === e.id ? "selected" : ""}>${esc(e.nome)}</option>`).join("")}</select></div>` : ""}
       <div id="lista">${listaChamados()}</div>
     </div>
     <div class="pane detail">${c ? detalheChamado(c) : '<p class="mut" style="font-size:13px;padding-top:20px;text-align:center">Selecione um chamado ao lado, ou crie um novo.</p>'}</div>
@@ -443,7 +456,7 @@ function detalheChamado(c) {
   <div class="card">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
       <div><h2 style="font-size:18px"><button class="icobtn" style="padding:0;font-size:inherit;font-weight:600" data-act="abrirImovel" data-id="${c.imovelId}">${esc(im.cliente || "?")}</button></h2>
-      <p style="margin:2px 0;font-size:13px;color:var(--tx2)">${esc([im.endereco, im.empreendimento].filter(Boolean).join(" — "))}</p></div>
+      <p style="margin:2px 0;font-size:13px;color:var(--tx2)">${esc([im.endereco, nomeCond(im)].filter(Boolean).join(" — "))}</p></div>
       <div>${tagStatus(c)}</div>
     </div>
     <div style="margin:8px 0">${tagGarantia(c)}</div>
@@ -482,43 +495,56 @@ function blocoVisita(v) {
     </div></div>`;
 }
 
-// --- imóveis ------------------------------------------------------------
+// --- imóveis e condomínios ---------------------------------------------
 function listaImoveis() {
   const q = norm(buscaIm);
-  const l = S.imoveis.filter(i => !q || norm([i.cliente, i.endereco, i.empreendimento, i.telefone].join(" ")).includes(q))
+  const l = S.imoveis.filter(i => (!filtroCond || i.condominioId === filtroCond) && (!q || norm([i.cliente, i.endereco, nomeCond(i), i.telefone].join(" ")).includes(q)))
     .sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR"));
-  return l.length ? `<div class="rows">${l.map(i => {
-    const n = S.chamados.filter(c => c.imovelId === i.id && !c.encerrado).length;
-    return `<button class="row" data-act="selImovel" data-id="${i.id}" aria-current="${i.id === selIm}">
-      <div class="g"><b>${esc(i.cliente)}</b><small>${esc([i.endereco, i.empreendimento].filter(Boolean).join(" — "))}</small></div>
-      <div class="v">${n ? `<span class="tag in">${n} aberto${n > 1 ? "s" : ""}</span>` : ""}</div></button>`;
-  }).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum imóvel.</p>';
+  return l.length ? `<div class="rows">${l.map(rowImovel).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhuma casa.</p>';
+}
+function rowImovel(i) {
+  const n = S.chamados.filter(c => c.imovelId === i.id && !c.encerrado).length;
+  return `<button class="row" data-act="selImovel" data-id="${i.id}" aria-current="${i.id === selIm && !selCond}">
+    <div class="g"><b>${esc(i.cliente)}</b><small>${esc([i.endereco, nomeCond(i)].filter(Boolean).join(" — "))}</small></div>
+    <div class="v">${n ? `<span class="tag in">${n} aberto${n > 1 ? "s" : ""}</span>` : ""}</div></button>`;
+}
+function rowCond(c) {
+  const casas = casasDe(c.id), ab = S.chamados.filter(x => !x.encerrado && casas.some(i => i.id === x.imovelId)).length;
+  return `<button class="row" data-act="selCond" data-id="${c.id}" aria-current="${c.id === selCond}">
+    <div class="g"><b>${esc(c.nome)}</b><small>${casas.length} casa${casas.length === 1 ? "" : "s"}${c.entrega ? " · entrega " + dBR(c.entrega) : ""}</small></div>
+    <div class="v">${ab ? `<span class="tag in">${ab} aberto${ab > 1 ? "s" : ""}</span>` : ""}</div></button>`;
 }
 function vImoveis() {
-  const im = imovel(selIm);
-  return `<div class="split" data-show="${mostrarDetalhe && im ? "detail" : "list"}">
+  const im = imovel(selIm), cd = cond(selCond);
+  const detalhe = cd ? detalheCond(cd) : im ? detalheImovel(im) : '<p class="mut" style="font-size:13px;padding-top:20px;text-align:center">Selecione um condomínio ou uma casa ao lado.</p>';
+  return `<div class="split" data-show="${mostrarDetalhe && (im || cd) ? "detail" : "list"}">
     <div class="pane list">
+      <p class="sec-t" style="margin-top:0">condomínios</p>
+      ${S.condominios.length ? `<div class="rows" style="margin-bottom:8px">${condsOrdenados().map(rowCond).join("")}</div>` : ""}
+      <button class="btn sec sm" data-act="novoCond" style="margin-bottom:6px">+ Novo condomínio</button>
+      <p class="sec-t">casas</p>
       <div class="field"><input id="fBuscaIm" placeholder="Buscar cliente, endereço…" value="${esc(buscaIm)}"></div>
-      <button class="btn sec" data-act="novoImovel" style="margin-bottom:10px">+ Novo imóvel</button>
+      ${S.condominios.length ? `<div class="field"><select id="fCond"><option value="">todos os condomínios</option>${condsOrdenados().map(e => `<option value="${e.id}" ${filtroCond === e.id ? "selected" : ""}>${esc(e.nome)}</option>`).join("")}</select></div>` : ""}
+      <button class="btn sec sm" data-act="novoImovel" style="margin-bottom:10px">+ Nova casa</button>
       <div id="listaIm">${listaImoveis()}</div>
     </div>
-    <div class="pane detail">${im ? detalheImovel(im) : '<p class="mut" style="font-size:13px;padding-top:20px;text-align:center">Selecione um imóvel ao lado.</p>'}</div>
+    <div class="pane detail">${detalhe}</div>
   </div>`;
 }
 function detalheImovel(im) {
   const cs = S.chamados.filter(c => c.imovelId === im.id).sort((a, b) => b.data.localeCompare(a.data));
-  const entregue = im.entrega ? dias(im.entrega, hoje()) : null;
+  const entrega = entregaDe(im), cd = cond(im.condominioId);
   return `<button class="icobtn voltar" data-act="voltar">‹ imóveis</button>
   <div class="card">
     <h2 style="font-size:18px">${esc(im.cliente)}</h2>
     <dl class="info">
       <dt>Telefone</dt><dd>${im.telefone ? `${esc(im.telefone)} · <a href="${wa(im.telefone)}" target="_blank">WhatsApp</a>` : "—"}</dd>
       <dt>Endereço</dt><dd>${esc(im.endereco) || "—"}</dd>
-      <dt>Empreend.</dt><dd>${esc(im.empreendimento) || "—"}</dd>
-      <dt>Entrega</dt><dd>${im.entrega ? dBR(im.entrega) + ` <span class="mut">(há ${entregue} dias)</span>` : '<span class="tag wa">sem data — garantia não calcula</span>'}</dd>
+      <dt>Condomínio</dt><dd>${cd ? `<button class="icobtn" style="padding:0;font-size:inherit" data-act="selCond" data-id="${cd.id}">${esc(cd.nome)}</button>` : "—"}</dd>
+      <dt>Entrega</dt><dd>${entrega ? dBR(entrega) + ` <span class="mut">(há ${dias(entrega, hoje())} dias${!im.entrega ? ", data do condomínio" : ""})</span>` : '<span class="tag wa">sem data — garantia não calcula</span>'}</dd>
       ${im.obs ? `<dt>Obs.</dt><dd style="white-space:pre-wrap">${esc(im.obs)}</dd>` : ""}
     </dl>
-    ${im.entrega ? `<p class="sec-t" style="margin-top:6px">garantias</p><div style="font-size:13px">${S.config.garantias.map(g => { const ate = addAnos(im.entrega, g.anos); const v = hoje() > ate; return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line)"><span>${esc(g.nome)}</span><span class="${v ? "mut" : ""}">${v ? "venceu " : "até "}${dBR(ate)}</span></div>`; }).join("")}</div>` : ""}
+    ${entrega ? `<p class="sec-t" style="margin-top:6px">garantias</p><div style="font-size:13px">${S.config.garantias.map(g => { const ate = addAnos(entrega, g.anos); const v = hoje() > ate; return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line)"><span>${esc(g.nome)}</span><span class="${v ? "mut" : ""}">${v ? "venceu " : "até "}${dBR(ate)}</span></div>`; }).join("")}</div>` : ""}
     <div class="acts" style="margin-top:12px">
       <button class="btn sm" data-act="novoChamadoIm" data-id="${im.id}">+ Chamado</button>
       <button class="btn sec sm" data-act="editarImovel" data-id="${im.id}">editar</button>
@@ -528,6 +554,41 @@ function detalheImovel(im) {
   <p class="sec-t">chamados (${cs.length})</p>
   ${cs.length ? `<div class="rows">${cs.map(rowChamado).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum chamado.</p>'}`;
 }
+// estatísticas do condomínio: onde o vício construtivo aparece, casa por casa
+function statsCond(cid) {
+  const casas = casasDe(cid), ids = new Set(casas.map(i => i.id));
+  const cs = S.chamados.filter(c => ids.has(c.imovelId) && !(c.encerrado && c.encerrado.status === "nao_procede"));
+  const tipos = {}; cs.forEach(c => { const t = (tipoG(c.tipoId) || {}).nome || "?"; tipos[t] = (tipos[t] || 0) + 1; });
+  const porCasa = casas.map(i => ({ im: i, n: cs.filter(c => c.imovelId === i.id).length, ab: cs.filter(c => c.imovelId === i.id && !c.encerrado).length }));
+  return { casas, total: cs.length, abertos: cs.filter(c => !c.encerrado).length, comChamado: porCasa.filter(x => x.n).length,
+    tipos: Object.entries(tipos).sort((a, b) => b[1] - a[1]), ranking: porCasa.filter(x => x.n).sort((a, b) => b.n - a.n) };
+}
+function detalheCond(cd) {
+  const st = statsCond(cd.id), max = Math.max(1, ...st.tipos.map(t => t[1]));
+  return `<button class="icobtn voltar" data-act="voltar">‹ imóveis</button>
+  <div class="card">
+    <h2 style="font-size:18px">${esc(cd.nome)}</h2>
+    <dl class="info">
+      <dt>Endereço</dt><dd>${esc(cd.endereco) || "—"}</dd>
+      <dt>Entrega</dt><dd>${cd.entrega ? dBR(cd.entrega) + ' <span class="mut">(padrão das casas sem data própria)</span>' : "—"}</dd>
+      ${cd.obs ? `<dt>Obs.</dt><dd style="white-space:pre-wrap">${esc(cd.obs)}</dd>` : ""}
+    </dl>
+    <div class="acts" style="margin-top:8px">
+      <button class="btn sm" data-act="novaCasaCond" data-id="${cd.id}">+ Casa</button>
+      <button class="btn sec sm" data-act="editarCond" data-id="${cd.id}">editar</button>
+      <button class="btn sec sm" style="color:var(--er-tx)" data-act="excluirCond" data-id="${cd.id}">excluir</button>
+    </div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><p>casas</p><b>${st.casas.length}</b></div>
+    <div class="kpi"><p>casas com chamado</p><b>${st.comChamado} <span>de ${st.casas.length}</span></b></div>
+    <div class="kpi"><p>chamados</p><b>${st.total} <span>· ${st.abertos} abertos</span></b></div>
+  </div>
+  ${st.tipos.length ? `<div class="card"><b>problemas por tipo</b>${st.tipos.map(([t, n]) => `<div style="font-size:13px;margin-top:8px;display:flex;justify-content:space-between"><span>${esc(t)}</span><b>${n}</b></div><div class="bar"><i style="width:${n / max * 100}%"></i></div>`).join("")}</div>` : ""}
+  ${st.ranking.length ? `<p class="sec-t">casas com mais chamados</p><div class="rows">${st.ranking.map(x => `<button class="row" data-act="selImovel" data-id="${x.im.id}"><div class="g"><b>${esc(x.im.cliente)}</b><small>${esc(x.im.endereco)}</small></div><div class="v"><b>${x.n}</b> <span class="mut">chamado${x.n > 1 ? "s" : ""}</span>${x.ab ? ` · <span class="tag in">${x.ab} aberto${x.ab > 1 ? "s" : ""}</span>` : ""}</div></button>`).join("")}</div>` : ""}
+  <p class="sec-t">todas as casas (${st.casas.length})</p>
+  ${st.casas.length ? `<div class="rows">${st.casas.map(rowImovel).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhuma casa cadastrada ainda.</p>'}`;
+}
 
 // --- painel -------------------------------------------------------------
 function vPainel() {
@@ -536,11 +597,11 @@ function vPainel() {
   const res = S.chamados.filter(c => c.encerrado && c.encerrado.status === "resolvido");
   const medio = res.length ? res.reduce((t, c) => t + dias(c.data, c.encerrado.data), 0) / res.length : NaN;
   const custo = S.visitas.reduce((t, v) => t + v.materiais.reduce((s, m) => s + (finito(m.valor) ? Number(m.valor) : 0), 0), 0);
-  // problemas por empreendimento × tipo — é aqui que vício construtivo aparece
+  // problemas por condomínio × tipo — é aqui que vício construtivo aparece
   const porEmp = {};
   S.chamados.forEach(c => {
     if (c.encerrado && c.encerrado.status === "nao_procede") return;
-    const e = (imovel(c.imovelId) || {}).empreendimento || "(sem empreendimento)";
+    const e = nomeCond(imovel(c.imovelId)) || "(sem condomínio)";
     const t = (tipoG(c.tipoId) || {}).nome || "?";
     porEmp[e] = porEmp[e] || { n: 0, tipos: {}, ims: new Set() };
     porEmp[e].n++; porEmp[e].ims.add(c.imovelId); porEmp[e].tipos[t] = (porEmp[e].tipos[t] || 0) + 1;
@@ -555,8 +616,8 @@ function vPainel() {
     <div class="kpi"><p>material lançado</p><b style="font-size:20px">${money(custo)}</b></div>
     <div class="kpi"><p>resolvidos</p><b>${res.length} <span>de ${S.chamados.length}</span></b></div>
   </div>
-  <p class="sec-t">problemas por empreendimento</p>
-  ${emps.length ? emps.map(([e, d]) => `<div class="card"><b>${esc(e)}</b> <span class="mut">· ${d.n} chamado${d.n > 1 ? "s" : ""} · ${d.ims.size} imóve${d.ims.size > 1 ? "is" : "l"}</span>
+  <p class="sec-t">problemas por condomínio</p>
+  ${emps.length ? emps.map(([e, d]) => `<div class="card"><b>${esc(e)}</b> <span class="mut">· ${d.n} chamado${d.n > 1 ? "s" : ""} · ${d.ims.size} casa${d.ims.size > 1 ? "s" : ""}</span>
     ${Object.entries(d.tipos).sort((a, b) => b[1] - a[1]).map(([t, n]) => `<div style="font-size:13px;margin-top:8px;display:flex;justify-content:space-between"><span>${esc(t)}</span><b>${n}</b></div><div class="bar"><i style="width:${n / max * 100}%"></i></div>`).join("")}
   </div>`).join("") : '<p class="mut" style="font-size:13px">Sem chamados ainda.</p>'}`;
 }
@@ -629,29 +690,48 @@ dlg.addEventListener("submit", e => {
 // o evento close chega atrasado; se outro formulário já reabriu o dialog, não limpa
 dlg.addEventListener("close", () => { if (!dlg.open) { aoEnviar = null; dlg.innerHTML = ""; } });
 
-const selectImoveis = (v, obrig = true) => `<select name="imovelId" ${obrig ? "required" : ""}><option value="">— escolha o imóvel —</option>${S.imoveis.slice().sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR")).map(i => `<option value="${i.id}" ${i.id === v ? "selected" : ""}>${esc(i.cliente)} — ${esc(i.endereco || i.empreendimento || "")}</option>`).join("")}</select>`;
+const selectImoveis = (v, obrig = true) => `<select name="imovelId" ${obrig ? "required" : ""}><option value="">— escolha o imóvel —</option>${S.imoveis.slice().sort((a, b) => a.cliente.localeCompare(b.cliente, "pt-BR")).map(i => `<option value="${i.id}" ${i.id === v ? "selected" : ""}>${esc(i.cliente)} — ${esc(i.endereco || nomeCond(i) || "")}</option>`).join("")}</select>`;
 const selectTipos = v => `<select name="tipoId" required>${S.config.garantias.map(g => `<option value="${g.id}" ${g.id === v ? "selected" : ""}>${esc(g.nome)} (${g.anos} ano${g.anos > 1 ? "s" : ""})</option>`).join("")}</select>`;
 const selectPessoas = v => `<select name="pessoaId">${S.config.pessoas.map(p => `<option value="${p.id}" ${p.id === v ? "selected" : ""}>${esc(p.nome)}</option>`).join("")}</select>`;
-const datalistEmp = () => `<datalist id="dlEmp">${empreendimentos().map(e => `<option value="${esc(e)}">`).join("")}</datalist>`;
+const selectConds = v => `<select name="condominioId"><option value="">— sem condomínio —</option>${condsOrdenados().map(c => `<option value="${c.id}" ${c.id === v ? "selected" : ""}>${esc(c.nome)}</option>`).join("")}</select>`;
 
-function formImovel(im, depois) {
+function formImovel(im, depois, condominioId) {
   im = im || {};
-  abrirForm(`<h2>${im.id ? "Editar imóvel" : "Novo imóvel"}</h2>
+  abrirForm(`<h2>${im.id ? "Editar casa" : "Nova casa"}</h2>
     <div class="field"><label>Cliente</label><input name="cliente" required value="${esc(im.cliente)}" placeholder="Nome do cliente"></div>
     <div class="grid2 field">
       <div><label>Telefone / WhatsApp</label><input name="telefone" inputmode="tel" value="${esc(im.telefone)}" placeholder="(11) 99999-9999"></div>
-      <div><label>Entrega das chaves</label><input name="entrega" type="date" value="${esc(im.entrega)}"></div>
+      <div><label>Entrega das chaves</label><input name="entrega" type="date" value="${esc(im.entrega)}"><p class="mut" style="font-size:11.5px;margin:4px 0 0">vazio = usa a data do condomínio</p></div>
     </div>
-    <div class="field"><label>Empreendimento</label><input name="empreendimento" list="dlEmp" value="${esc(im.empreendimento)}" placeholder="Residencial …">${datalistEmp()}</div>
+    <div class="field"><label>Condomínio</label>${selectConds(im.condominioId || condominioId)}
+      ${!im.id ? '<button type="button" class="icobtn" data-act="condNoForm" style="margin-top:4px">+ cadastrar condomínio novo</button>' : ""}</div>
     <div class="field"><label>Endereço / unidade</label><input name="endereco" value="${esc(im.endereco)}" placeholder="Rua, nº, casa 12"></div>
     <div class="field"><label>Observações</label><textarea name="obs" style="min-height:56px">${esc(im.obs)}</textarea></div>`,
   d => {
     const novo = !im.id;
     const o = novo ? { id: uid(), criadoEm: new Date().toISOString() } : im;
-    Object.assign(o, { cliente: d.cliente.trim(), telefone: d.telefone.trim(), entrega: d.entrega, empreendimento: d.empreendimento.trim(), endereco: d.endereco.trim(), obs: d.obs.trim() });
+    Object.assign(o, { cliente: d.cliente.trim(), telefone: d.telefone.trim(), entrega: d.entrega, condominioId: d.condominioId || null, endereco: d.endereco.trim(), obs: d.obs.trim() });
     if (novo) S.imoveis.push(o);
     salvar();
-    if (depois) setTimeout(() => depois(o)); else { selIm = o.id; render(); }
+    if (depois) setTimeout(() => depois(o)); else { selIm = o.id; selCond = null; render(); }
+  });
+}
+function formCond(cd, depois) {
+  cd = cd || {};
+  abrirForm(`<h2>${cd.id ? "Editar condomínio" : "Novo condomínio"}</h2>
+    <div class="field"><label>Nome</label><input name="nome" required value="${esc(cd.nome)}" placeholder="Residencial …"></div>
+    <div class="grid2 field">
+      <div><label>Endereço</label><input name="endereco" value="${esc(cd.endereco)}" placeholder="Rua, bairro"></div>
+      <div><label>Entrega das chaves</label><input name="entrega" type="date" value="${esc(cd.entrega)}"><p class="mut" style="font-size:11.5px;margin:4px 0 0">vale pras casas sem data própria</p></div>
+    </div>
+    <div class="field"><label>Observações</label><textarea name="obs" style="min-height:56px">${esc(cd.obs)}</textarea></div>`,
+  d => {
+    const novo = !cd.id;
+    const o = novo ? { id: uid() } : cd;
+    Object.assign(o, { nome: d.nome.trim(), endereco: d.endereco.trim(), entrega: d.entrega, obs: d.obs.trim() });
+    if (novo) S.condominios.push(o);
+    salvar();
+    if (depois) setTimeout(() => depois(o)); else { selCond = o.id; selIm = null; mostrarDetalhe = true; render(); }
   });
 }
 function formChamado(c, imovelId) {
@@ -923,7 +1003,7 @@ function ics(v) {
   return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//assistencia//PT", "BEGIN:VEVENT", "UID:" + v.id + "@assistencia",
     "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z", "DTSTART:" + ini, "DTEND:" + fim,
     "SUMMARY:" + t("Visita: " + (im.cliente || "") + " — " + ((tipoG(c.tipoId) || {}).nome || "")),
-    "LOCATION:" + t([im.endereco, im.empreendimento].filter(Boolean).join(", ")),
+    "LOCATION:" + t([im.endereco, nomeCond(im)].filter(Boolean).join(", ")),
     "DESCRIPTION:" + t((VTIPO[v.tipo] || "") + "\n" + (c.descricao || "") + (im.telefone ? "\nTel: " + im.telefone : "") + (v.obs ? "\n" + v.obs : "")),
     "END:VEVENT", "END:VCALENDAR"].join("\r\n");
 }
@@ -953,8 +1033,21 @@ function acao(a, id, el) {
     case "selChamado": if (tela !== "chamados") return abrirChamado(id); sel = id; mostrarDetalhe = true; return render();
     case "abrirChamado": return abrirChamado(id);
     case "abrirImovel": return abrirImovel(id);
-    case "selImovel": selIm = id; mostrarDetalhe = true; return render();
-    case "novoImovel": return formImovel();
+    case "selImovel": if (tela !== "imoveis") return abrirImovel(id); selIm = id; selCond = null; mostrarDetalhe = true; return render();
+    case "selCond": tela = "imoveis"; selCond = id; selIm = null; mostrarDetalhe = true; return render();
+    case "novoCond": return formCond();
+    case "editarCond": return formCond(cond(id));
+    case "novaCasaCond": return formImovel(null, null, id);
+    case "condNoForm": {
+      const f = dlg.querySelector("form"), guardado = f ? Object.fromEntries(new FormData(f).entries()) : {};
+      dlg.close();
+      return formCond(null, novo => formImovel(Object.assign({}, guardado, { id: undefined }), null, novo.id));
+    }
+    case "excluirCond":
+      if (casasDe(id).length) return alert("Esse condomínio ainda tem casas. Mova ou exclua as casas antes.");
+      if (!confirm("Excluir o condomínio?")) return;
+      S.condominios = S.condominios.filter(x => x.id !== id); selCond = null; mostrarDetalhe = false; salvar(); return render();
+    case "novoImovel": return formImovel(null, null, filtroCond || selCond);
     case "editarImovel": return formImovel(im);
     case "imovelNoForm": {
       const f = dlg.querySelector("form"), guardado = f ? Object.fromEntries(new FormData(f).entries()) : {};
@@ -1011,6 +1104,7 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   if (e.target.id === "fEmp") { filtro.emp = e.target.value; return render(); }
+  if (e.target.id === "fCond") { filtroCond = e.target.value; return render(); }
   if (dlg.open && ["imovelId", "tipoId", "data"].includes(e.target.name)) infoGarantiaForm();
   if (dlg.open && e.target.name === "resolveu") { const p = document.getElementById("fProx"); if (p) p.style.display = e.target.value === "0" ? "block" : "none"; }
   if (e.target.id === "fileFoto" && e.target.files.length) { guardarFotos([...e.target.files], fotoRef).then(render); e.target.value = ""; }
@@ -1036,7 +1130,11 @@ function autoteste() {
   const ok = [];
   const T = (nome, cond) => ok.push((cond ? "ok   " : "FALHA") + "  " + nome);
   const bkp = S; S = PADRAO();
-  S.imoveis = [{ id: "i1", cliente: "Ana", telefone: "11999990000", empreendimento: "Res. Sol", endereco: "casa 1", entrega: "2023-03-10" }];
+  S.condominios = [{ id: "k1", nome: "Res. Sol", endereco: "", entrega: "2023-03-10", obs: "" }];
+  S.imoveis = [{ id: "i1", cliente: "Ana", telefone: "11999990000", condominioId: "k1", endereco: "casa 1", entrega: "" }];
+  T("casa sem data herda a entrega do condomínio", entregaDe(S.imoveis[0]) === "2023-03-10");
+  const mig = migrar({ imoveis: [{ id: "x", cliente: "B", empreendimento: "Res. Lua" }, { id: "y", cliente: "C", empreendimento: "Res. Lua" }] });
+  T("migração transforma empreendimento em condomínio (um só)", mig.condominios.length === 1 && mig.imoveis[0].condominioId === mig.condominios[0].id && !("empreendimento" in mig.imoveis[1]));
   S.chamados = [
     { id: "c1", imovelId: "i1", data: "2026-01-05", canal: "whatsapp", tipoId: "pintura", descricao: "", cortesia: false, encerrado: null, criadoEm: "" },
     { id: "c2", imovelId: "i1", data: "2026-01-05", canal: "whatsapp", tipoId: "imperm", descricao: "", cortesia: false, encerrado: null, criadoEm: "" }
@@ -1056,7 +1154,7 @@ function autoteste() {
   const i = ics(S.visitas[0]);
   T("ics tem data/hora e endereço", i.includes("DTSTART:20260108T090000") && i.includes("DTEND:20260108T100000") && i.includes("LOCATION:casa 1\\, Res. Sol"));
   T("num aceita vírgula", num("1.234,50") === 1234.5 && isNaN(num("")));
-  let montou = true; try { vAgenda(); vPainel(); vChamados(); vImoveis(); vAjustes(); } catch (e) { montou = false; console.error(e); }
+  let montou = true; try { vAgenda(); vPainel(); vChamados(); selCond = "k1"; mostrarDetalhe = true; vImoveis(); selCond = null; selIm = "i1"; vImoveis(); vAjustes(); } catch (e) { montou = false; console.error(e); }
   T("todas as telas montam com dados", montou);
   S = PADRAO();
   try { vAgenda(); vPainel(); vChamados(); vImoveis(); } catch (e) { montou = false; console.error(e); }
