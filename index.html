@@ -360,6 +360,7 @@ const tagGarantia = c => {
 const atrasada = v => !v.feita && !v.cancelada && v.data < hoje();
 const pendente = v => !v.feita && !v.cancelada;
 const semVisita = c => !c.encerrado && !visitasDe(c.id).some(pendente);
+const aRemarcar = c => semVisita(c) && visitasDe(c.id).some(v => v.cancelada);
 const itens = c => (c && Array.isArray(c.itens) ? c.itens : []);
 const nomeTipo = it => (tipoG((it || {}).tipoId) || {}).nome || "?";
 const nomesTipos = c => itens(c).map(nomeTipo);
@@ -424,7 +425,7 @@ function vAgenda() {
   const doDia = (porDia[diaSel] || []).sort((a, b) => (a.hora || "").localeCompare(b.hora || ""));
   const atras = S.visitas.filter(atrasada).sort((a, b) => a.data.localeCompare(b.data));
   const prox = S.visitas.filter(v => pendente(v) && v.data > hoje() && v.data <= addDias(hoje(), 7)).sort((a, b) => (a.data + a.hora).localeCompare(b.data + b.hora));
-  const semV = abertos().filter(semVisita);
+  const semV = abertos().filter(semVisita).sort((a, b) => (aRemarcar(b) ? 1 : 0) - (aRemarcar(a) ? 1 : 0) || a.data.localeCompare(b.data));
   const semAss = S.chamados.filter(semAssinatura).sort((a, b) => a.encerrado.data.localeCompare(b.encerrado.data));
   return `<div class="agenda"><div>
     <div class="cal-h">
@@ -466,11 +467,11 @@ function cardVisita(v) {
 // --- chamados -----------------------------------------------------------
 function rowChamado(c) {
   const im = imovel(c.imovelId) || {}, g = garantia(c);
-  const prox = visitasDe(c.id).find(v => !v.feita);
+  const prox = visitasDe(c.id).find(pendente);
   return `<button class="row" data-act="selChamado" data-id="${c.id}" aria-current="${c.id === sel}">
     <div class="g"><b>${esc(im.cliente || "?")} <span class="mut" style="font-weight:400">· ${esc(nomeCond(im))}</span></b>
     <small>${esc(resumoItens(c))} · aberto ${dBR(c.data)}${g && g.vencida ? " · ⚠ fora da garantia" : g && g.parcial ? " · garantia parcial" : ""}</small></div>
-    <div class="v">${tagStatus(c)}${prox ? `<small class="mut" style="display:block;font-size:11px">visita ${dBR(prox.data)}</small>` : ""}</div>
+    <div class="v">${aRemarcar(c) ? '<span class="tag er">remarcar</span>' : tagStatus(c)}${prox ? `<small class="mut" style="display:block;font-size:11px">visita ${dBR(prox.data)}</small>` : ""}</div>
   </button>`;
 }
 function listaChamados() {
@@ -482,7 +483,7 @@ function listaChamados() {
     if (filtro.emp && im.condominioId !== filtro.emp) return false;
     if (q && !norm([im.cliente, im.endereco, nomeCond(im), ...itens(c).map(it => nomeTipo(it) + " " + it.descricao)].join(" ")).includes(q)) return false;
     return true;
-  }).sort((a, b) => b.data.localeCompare(a.data) || b.criadoEm.localeCompare(a.criadoEm));
+  }).sort((a, b) => (aRemarcar(b) ? 1 : 0) - (aRemarcar(a) ? 1 : 0) || b.data.localeCompare(a.data) || b.criadoEm.localeCompare(a.criadoEm));
   return l.length ? `<div class="rows">${l.map(rowChamado).join("")}</div>` : '<p class="mut" style="font-size:13px">Nenhum chamado.</p>';
 }
 function vChamados() {
@@ -510,6 +511,7 @@ function detalheChamado(c) {
       <p style="margin:2px 0;font-size:13px;color:var(--tx2)">${esc([im.endereco, nomeCond(im)].filter(Boolean).join(" — "))}</p></div>
       <div>${tagStatus(c)}</div>
     </div>
+    ${aRemarcar(c) ? `<div class="note er" style="margin-top:10px">⚠ <span><b>Visita cancelada e ainda sem remarcar.</b> ${esc((visitasDe(c.id).filter(v => v.cancelada).pop() || {}).cancelada.motivo || "sem motivo registrado")}</span></div>` : ""}
     <div style="margin:8px 0">${tagGarantia(c)} ${c.encerrado ? (c.encerrado.assinatura ? `<span class="tag ok">assinado em ${dBR(c.encerrado.assinatura.data)}</span>` : '<span class="tag wa">assinatura pendente</span>') : ""}</div>
     <p class="sec-t" style="margin:10px 0 4px">problemas (${itens(c).length})</p>
     ${itens(c).map(it => { const gi = garantiaItem(c, it); return `<div style="padding:5px 0;border-bottom:1px solid var(--line)">
@@ -1377,6 +1379,10 @@ function autoteste() {
   T("visita marcada no passado = atrasada", atrasada(S.visitas[0]) === true);
   S.visitas[0].cancelada = { data: "2026-01-07", motivo: "cliente não estava" };
   T("visita cancelada não fica atrasada nem segura o chamado", atrasada(S.visitas[0]) === false && statusDe(S.chamados[1]) === "aberto" && semVisita(S.chamados[1]) === true);
+  T("chamado com visita cancelada e sem remarcar vira prioridade", aRemarcar(S.chamados[1]) === true);
+  S.visitas.push({ id: "v2", chamadoId: "c2", data: "2026-02-01", hora: "", tipo: "retorno", pessoaId: "p1", feita: false, cancelada: null, relato: "", resolveu: null, materiais: [] });
+  T("depois de remarcar, deixa de ser prioridade", aRemarcar(S.chamados[1]) === false);
+  S.visitas.pop();
   S.visitas[0].cancelada = null;
   S.visitas[0].feita = true; S.visitas[0].resolveu = false;
   T("visita feita sem resolver = em andamento, sem visita marcada", statusDe(S.chamados[1]) === "andamento" && semVisita(S.chamados[1]));
